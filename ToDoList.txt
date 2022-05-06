@@ -1,0 +1,39 @@
+
+1. Inicializador
+  	1.1 Recursos: Memoria compartida
+	1.2 Crea el archivo para la bitacora.
+	1.3 Memoria compartida con shmget
+
+2. Pasarle procesos al productor en el ready, con threads.
+
+3. Productor de procesos.
+	3.1 Hacer un ready 
+	3.2 Se indica si segmentacion o paginacion.
+	3.3 Se crean procesos cada 30-60 segundos.
+	3.4 Solo un proceso puede estar buscando memoria.
+	3.4 Si es segmentacion es con best fit, si es paginacion cualquiera.
+	3.5 Cada proceso hace sleep y toma la gerion critica de forma exclusiva.
+
+4. Espía
+	4.1 Estado de la memoria
+	4.2 Estado de procesos: PID de los que están en memoria, PID del que busca memoria, PID bloqueados, PID muertos, PID terminados.
+
+5. Bitacora. 
+
+6. Finalizador.
+
+
+
+
+NOTAS:
+1. Si no hay espacio en memoria, o sea un proceso de 5 paginas por ejemplo llega 
+y no hay 5 paginas en memoria dispobibles, entonces muere el proceso y se saca de ready. 
+
+2. Segmentacion se puede hacer solo con firts fit.
+
+3. Al hacer  la escritura de la bitacora si se pueden usar semaforos normales porque es para 
+hilos de un mismo programa.
+
+4. El productor hace los pasos 1 - 10 (espcificacion)
+
+5. Probar IPCS para ver los espacios de memoria compartida
