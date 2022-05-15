@@ -37,3 +37,6 @@ hilos de un mismo programa.
 4. El productor hace los pasos 1 - 10 (espcificacion)
 
 5. Probar IPCS para ver los espacios de memoria compartida
+
+6. sizeof(int) devuelve el número de bytes que se utilizan para almacenar un entero. La función se puede utilizar también con tipos de datos estructurados o uniones.
+tal vez se util para ver el tamaño de los procesos. https://www.it.uc3m.es/pbasanta/asng/course_notes/ch06s04.html
