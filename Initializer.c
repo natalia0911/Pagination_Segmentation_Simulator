@@ -5,27 +5,37 @@
 
 #include "AuxiliarFunctions.c"
 
+
 #define IPC_RESULT_ERROR (-1)
 
 
 
-int createMemoryCasilla(key_t key, int tamano){
+int createMemory(key_t key, int tamannio){
     /**
      * @brief Crea la memoria compartida y el espacio para esta
      * segun la key asociada
      */
-	int Id_Memoria = shmget (key, tamano, 0777 | IPC_CREAT);
-	if (Id_Memoria == IPC_RESULT_ERROR)
+	int IdMemoria = shmget (key, sizeof(Process)*tamannio, 0777 | IPC_CREAT);
+	if (IdMemoria == IPC_RESULT_ERROR)
 	{
 		printf("Error trying to get the Id!\n");
 		exit(0);
 	}
-    return Id_Memoria;
+    return IdMemoria;
 
 }
 
+void prepareMemory(int n, Process* Memory){
+    //Inicializa cada casilla con un 0 en su 'estado'
+	for (int i=0; i<n; i++)
+	{
+		Memory[i].state = 0;
+		printf("Escrito %d\n", Memory[i].state);
+	}
+}
 
-key_t getKey(int mem_id){ 
+
+key_t getKey(int IDMem){ 
     /**
      * @brief Funcion que obtiene la key para la memoria compartida
      *  Se le pasa un fichero existente, y un entero cualquiera que 
@@ -35,25 +45,43 @@ key_t getKey(int mem_id){
      *  NOTA> tal vez esta funcion se necesite en el productor y 
      *  deberia estar en otro archivo.
      */
-	key_t clave;
+	key_t key;
 
-	clave = ftok ("/bin/ls", mem_id);
-	if (clave == IPC_RESULT_ERROR)
+	key = ftok ("/bin/ls", IDMem);
+	if (key == IPC_RESULT_ERROR)
 	{
 		printf("Error trying to get the key!\n");
 		exit(0);
 	}
-	return clave;
+	return key;
 }
+
 
 
 int main(){
 
     key_t k;
-    k = getKey(1);
-    int entero = createMemoryCasilla(k,1024);
-    printf("Numero de memoria xd: %i\n",entero);
-    saveSizeinFile(1024);
+    k = getKey(100);
+    int tamannio = 15;
+    int IdMemory = createMemory(k,tamannio);
+    printf("Numero de memoria xd: %i\n",IdMemory);
+    saveSizeinFile(tamannio);
     initializeBinnacle();
 
+    Process *memory = getMemory(IdMemory);
+
+    prepareMemory(tamannio,memory);
+    //Liberar memoria.
+	shmdt ((char *)memory);
+
+    /* 
+    PARA VER SEGMENTOS EN MEMORIA
+    >> ipcs -a
+    PARA BORAR SEGMENTOS EN MEMORIA, SHMID SEGUN CORRESPONDA
+    >> ipcrm -m shmid
+
+    gcc Initializer.c
+    ./a.out
+    */
+    
 }

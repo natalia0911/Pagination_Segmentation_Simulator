@@ -2,7 +2,7 @@
 #include <stdio.h>  
 #include <stdlib.h>
 #include <string.h>
-
+#include "Process.c"
 #include <pthread.h>
 
 //Constantes a utilizar
@@ -82,7 +82,8 @@ void generarDatos(){
     return;
 
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[]) 
+{
     if (argc<2){printf("ERROR: Debe ingresar el tipo de simulación.\n"); return 0;}
 
     char *tipo = argv[1];

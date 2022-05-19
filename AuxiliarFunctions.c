@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "Process.c"
 
-
+//FUNCIONES DE ARCHIVOS
 FILE* openFile(const char* name, char *modo){
 	/**
 	 * @brief Abre un archivo y devuelve el puntero a este
@@ -80,3 +81,25 @@ void addToBinnacle(int id_Proceso, char* mensaje, int success){
     fclose(file);
 
 }
+
+
+
+//FUNCIONES DE MEMORIA
+
+Process* getMemory(int IdMem){ 
+	/**
+	 * @brief Obtiene la memoria compartida, dado un id de memoria
+	 * 
+	 */
+	
+	Process* memory = (Process *)shmat (IdMem, 0, 0);
+	if (memory == NULL)
+	{
+		printf("There is not any memory available!\n");
+		exit(0);
+	}
+	return memory;
+}
+
+
+

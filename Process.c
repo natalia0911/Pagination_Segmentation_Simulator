@@ -20,9 +20,12 @@ typedef struct Segments{
 
 typedef struct Process{
     pid_t PID;
+    //Para el tiempo
     short burst;
     //Se utiliza si se usa paginación.
     short cantPaginas;
+    //0.En memoria, 1.Ejecutando
+    short state;
     //Se utiliza si se usa Segmentación.
     Segments *seg;
 
