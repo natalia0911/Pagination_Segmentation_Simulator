@@ -2,8 +2,9 @@
 #include <stdio.h>  
 #include <stdlib.h>
 #include <string.h>
-#include "Process.c"
 #include <pthread.h>
+#include <unistd.h>
+#include "SharedFunctions.c"
 
 //Constantes a utilizar
 #define MAXPAGES 10
@@ -80,16 +81,37 @@ void generarDatos(){
     }
     //pthread_join (hiloAgregar, NULL );
     return;
+}
 
 
 int main(int argc, char *argv[]) 
 {
+
+    /*
+    COMPILAR EL PROGRAMA
+    gcc Producer.c -o p2  -pthread
+    EJECUTAR EL PROGRAMA
+    */
+
+    //Obtener la llave de la memoria
+    key_t memoryKey = getKey(100);
+    int tamannio = getSize();
+    //Obtener el id de la memoria segun clave
+    int memoryId = createMemory(memoryKey,tamannio);
+    printf("Id de memoria: %i\n",memoryId);
+    //Obtener la memoria con shmat
+    Process *memory = getMemory(memoryId);
+
+
+
     if (argc<2){printf("ERROR: Debe ingresar el tipo de simulación.\n"); return 0;}
 
     char *tipo = argv[1];
 
     pthread_t hiloCreador;
 
+    printf("Id de memoria: %s\n",tipo);
+    
     if(tipo=="1")//1:Paginacipn  2:Segmentacion
         //pthread_create (&hiloCreador, NULL, creadorProcesos, NULL;
         isSEGMENTATION=0;
@@ -106,4 +128,6 @@ int main(int argc, char *argv[])
 
     printf("\n\tSTATUS: El creador de proceso se ha detenido.\n");
     return 0;
+
+    
 }

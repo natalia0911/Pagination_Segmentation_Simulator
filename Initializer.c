@@ -1,32 +1,39 @@
-
-#include <sys/shm.h>
-#include <sys/ipc.h>
-#include <sys/types.h>
-
-#include "AuxiliarFunctions.c"
+#include "SharedFunctions.c"
 
 
-#define IPC_RESULT_ERROR (-1)
-
-
-
-int createMemory(key_t key, int tamannio){
+void saveSizeinFile(int size) { 
     /**
-     * @brief Crea la memoria compartida y el espacio para esta
-     * segun la key asociada
+     * @brief Guarda en un archivo el tamaño de la memoria compartida
+     * 
      */
-	int IdMemoria = shmget (key, sizeof(Process)*tamannio, 0777 | IPC_CREAT);
-	if (IdMemoria == IPC_RESULT_ERROR)
-	{
-		printf("Error trying to get the Id!\n");
-		exit(0);
-	}
-    return IdMemoria;
+    FILE *file;
+	file = fopen("Size.txt","w");
 
+   	if(file == NULL)
+   	{
+    	printf("Error!");   
+    	exit(1);             
+	}
+
+	fprintf(file,"%d",size);
+	fclose(file);
+}
+
+
+void initializeBinnacle(){
+	/**
+	 * @brief Acciones de cada proceso. PID, acción, tipo (asignación, desasignación), 
+	 * hora, espacio asignado, entrò o no a la memoria.
+	 */
+	FILE *file;     
+	file = openFile("binnacle.txt","w");
+	fprintf (file, "%s","PID\t\tAction\t\t\tType\t\t\tAccion\t\t\t\tTime\t\t\t\tAllocated space\t\t\t\tEntered");
+    fclose(file);
 }
 
 void prepareMemory(int n, Process* Memory){
     //Inicializa cada casilla con un 0 en su 'estado'
+    //No se si sea necesario, pero era para probar acceso a memoria
 	for (int i=0; i<n; i++)
 	{
 		Memory[i].state = 0;
@@ -35,42 +42,24 @@ void prepareMemory(int n, Process* Memory){
 }
 
 
-key_t getKey(int IDMem){ 
-    /**
-     * @brief Funcion que obtiene la key para la memoria compartida
-     *  Se le pasa un fichero existente, y un entero cualquiera que 
-     *  es el mem_id, todos los que quieran la key deben usar mismo
-     *  fichero y mem_id para usar el mismo espacio en memoria.
-     * 
-     *  NOTA> tal vez esta funcion se necesite en el productor y 
-     *  deberia estar en otro archivo.
-     */
-	key_t key;
-
-	key = ftok ("/bin/ls", IDMem);
-	if (key == IPC_RESULT_ERROR)
-	{
-		printf("Error trying to get the key!\n");
-		exit(0);
-	}
-	return key;
-}
-
-
-
 int main(){
 
-    key_t k;
-    k = getKey(100);
+    //Obtener la llave asociada al numero
+    key_t memoryKey = getKey(100);
     int tamannio = 15;
-    int IdMemory = createMemory(k,tamannio);
-    printf("Numero de memoria xd: %i\n",IdMemory);
+    //Obtener el id de la memoria segun clave
+    int memoryId = createMemory(memoryKey,tamannio);
+    printf("Id de memoria: %i\n",memoryId);
+    //Guardar el tamaño
     saveSizeinFile(tamannio);
+    //Encabezado de la bitacora
     initializeBinnacle();
+    //Obtener la memoria con shmat
+    Process *memory = getMemory(memoryId);
 
-    Process *memory = getMemory(IdMemory);
-
+    //No se si sea necesario, pero era para probar acceso a memoria
     prepareMemory(tamannio,memory);
+
     //Liberar memoria.
 	shmdt ((char *)memory);
 
@@ -80,8 +69,11 @@ int main(){
     PARA BORAR SEGMENTOS EN MEMORIA, SHMID SEGUN CORRESPONDA
     >> ipcrm -m shmid
 
-    gcc Initializer.c
-    ./a.out
+    PARA COMPILAR
+    gcc Initializer.c -o p1
+    PARA EJECUTAR
+    ./p1
+    
     */
     
 }
