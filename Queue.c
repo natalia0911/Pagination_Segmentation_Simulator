@@ -114,4 +114,26 @@ void printInfo(Queue *q, char *tipo){
 
 }
 
+void printQueue(Queue *q, int tipo){
+    Node *temp = q->first;
+
+    while(temp!=NULL){
+        printf("-----------------------------------------------------\n");
+        if(tipo){//Segmentiación
+            printf("PID: %i Burst: %i \n",temp->process->PID,temp->process->burst);
+            printf("Cantidad Paginas: \n",temp->process->seg->cantidad);
+
+        }else{//Paginación.
+            printf("PID: %i Burst: %i \n",temp->process->PID,temp->process->burst);
+            printf("Cantidad Paginas: \n",temp->process->cantPaginas);
+
+        }
+
+        //Avanza al siguiente nodo
+        temp = temp->next;
+    }   
+    printf("-----------------------------------------------------\n");
+
+}
+
 

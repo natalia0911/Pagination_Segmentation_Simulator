@@ -5,6 +5,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include "SharedFunctions.c"
+#include <semaphore.h>
 #include "Queue.c"
 
 //Constantes a utilizar
@@ -21,7 +22,8 @@
 
 #define MICROSECONDOS 1000000
 
-pid_t PID_AutoIncrement=0;
+sem_t semPID;
+short PID_AutoIncrement=0;
 
 //Flag que me indica que tipo de algoritmo estoy usando.
 int isSEGMENTATION = -1;
@@ -40,7 +42,7 @@ Queue *dead;
 void generarDatos(){
     short burst;
     short espera;
-
+    short PID;
     short cantidadPagSeg;
     short espaciosSeg;
 
@@ -59,19 +61,27 @@ void generarDatos(){
         
         burst = random() % ((MAXBURST) - (MINBURST)+1) + (MINBURST);
 
-        cantidadPagSeg = random() % ((MAXPAGES) - (MINPAGSEGESP)+1) + (MINPAGSEGESP);
-
-        //  NOTA: Falta agregar el PID
-
         if (isSEGMENTATION==0){//Paginación
             //Ovtiene la cantidad de paginación.
             cantidadPagSeg = random() % ((MAXPAGES) - (MINPAGSEGESP)+1) + (MINPAGSEGESP);
-            process = createProcessPag(burst, cantidadPagSeg);
+
+            //Región critiga para obtener el IP del proceso.
+            sem_wait(&semPID);
+            PID=PID_AutoIncrement++;//Lo obtiene y lo incrementa.
+            sem_post(&semPID); 
+
+            process = createProcessPag(PID, burst, cantidadPagSeg);
 
         }else if (isSEGMENTATION==1){//Segmentación.
             //Obtiene la cantidad de segmentos
             cantidadPagSeg = random() % ((MAXSEGMENTS) - (MINPAGSEGESP)+1) + (MINPAGSEGESP);
-            process = createProcessSeg(burst, cantidadPagSeg);
+
+            //Región critiga para obtener el IP del proceso.
+            sem_wait(&semPID);
+            PID=PID_AutoIncrement++;//Lo obtiene y lo incrementa.
+            sem_post(&semPID); 
+
+            process = createProcessSeg(PID, burst, cantidadPagSeg);
 
             for (int i=0; i<cantidadPagSeg; i++){
                 espaciosSeg = random() % ((MAXESPACIOS) - (MINPAGSEGESP)+1) + (MINPAGSEGESP);
@@ -84,7 +94,8 @@ void generarDatos(){
             }
         }
 
-        //AGREGA EL PROCESO        
+        //AGREGA EL PROCESO
+        enqueue (process, ready);
         //pthread_create (&hiloAgregar, NULL, agregarProceso, &process);
             
     }
@@ -103,6 +114,22 @@ int main(int argc, char *argv[])
     ./p2 [1|2]
     */
 
+    srandom(time(NULL));//Establecer una raíz
+
+    if (argc<2){printf("ERROR: Debe ingresar el tipo de simulación.\n"); return 0;}
+
+    int tipo = atoi(argv[1]);
+
+    pthread_t hiloCreador;//Hilo para el proceso que crea los procesos.
+    pthread_t hiloBuscador;//Hilo de la funcion que se encarga de que los procesos soliciten y hagan la busqueda de su espacio.
+
+    printf("Id de memoria: %s\n",tipo);
+    
+    //1:Paginacipn  2:Segmentacion
+    if(tipo==1) {isSEGMENTATION=0;}
+    else if (tipo==2){isSEGMENTATION=1;}
+    else{printf("ERROR: Debe ingresar un modo de simulación válido (1-2).\n"); return 0;}
+
     //Obtener la llave de la memoria
     key_t memoryKey = getKey(100);
     int tamannio = getSize();
@@ -117,27 +144,14 @@ int main(int argc, char *argv[])
     finished = createQueue();
     dead = createQueue();
 
-    if (argc<2){printf("ERROR: Debe ingresar el tipo de simulación.\n"); return 0;}
+    //Inicia el semaforo para el ID
+    sem_init(&semPID, 0, 1);
 
-    char *tipo = argv[1];
+    pthread_create (&hiloCreador, NULL, generarDatos, NULL);
+    //pthread_create (&hiloBuscador, NULL, buscarProcesos, NULL);
 
-    pthread_t hiloCreador;
-
-    printf("Id de memoria: %s\n",tipo);
-    
-    if(tipo=="1")//1:Paginacipn  2:Segmentacion
-        //pthread_create (&hiloCreador, NULL, creadorProcesos, NULL;
-        isSEGMENTATION=0;
-
-    else if (tipo=="2")
-        //pthread_create (&hiloCreador, NULL, creadorProcesos, NULL);
-        isSEGMENTATION=1;
-    else{
-        printf("ERROR: Debe ingresar un modo de simulación válido (1-2).\n");
-        return 0;
-    }
-
-    //pthread_join(hiloCreador, NULL);
+    pthread_join(hiloCreador, NULL);//Para que el main espere hasta que el creadorProcesos acabe y no se termine el programa.
+    //pthread_join(hiloBuscador, NULL);
 
     printf("\n\tSTATUS: El creador de proceso se ha detenido.\n");
     return 0;

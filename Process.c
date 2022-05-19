@@ -19,7 +19,7 @@ typedef struct Segments{
 
 
 typedef struct Process{
-    pid_t PID;
+    short PID;
     //Para el tiempo
     short burst;
     //Se utiliza si se usa paginación.
@@ -44,18 +44,19 @@ Segments *createSegment(short cantidad){
 }
 
 
-Process *createProcessSeg(short burst, short cantSegmentos){
+Process *createProcessSeg(short PID, short burst, short cantSegmentos){
     Process *p = malloc(sizeof(Process));
 
     Segments *seg = createSegment(cantSegmentos);
-
+    p->PID = PID;
     p->burst = burst;
     p->seg = seg;
     return p;
 }
 
-Process *createProcessPag(short burst, short cantPaginas){
+Process *createProcessPag(short PID, short burst, short cantPaginas){
     Process *p = malloc(sizeof(Process));
+    p->PID = PID;
     p->burst = burst;
     p->cantPaginas = cantPaginas;
     return p;
