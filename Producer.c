@@ -5,6 +5,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include "SharedFunctions.c"
+#include "Queue.c"
 
 //Constantes a utilizar
 #define MAXPAGES 10
@@ -27,6 +28,14 @@ int isSEGMENTATION = -1;
 
 //Flag que me indica que tipo de algoritmo estoy usando.
 int isRUNNING = 1;
+
+//Colas para que luego el espia acceda
+Queue *ready;
+Queue *finished;
+Queue *dead;
+
+
+
 
 void generarDatos(){
     short burst;
@@ -91,6 +100,7 @@ int main(int argc, char *argv[])
     COMPILAR EL PROGRAMA
     gcc Producer.c -o p2  -pthread
     EJECUTAR EL PROGRAMA
+    ./p2 [1|2]
     */
 
     //Obtener la llave de la memoria
@@ -102,7 +112,10 @@ int main(int argc, char *argv[])
     //Obtener la memoria con shmat
     Process *memory = getMemory(memoryId);
 
-
+    //Se crea la cola del ready, finished y dead
+    ready = createQueue();
+    finished = createQueue();
+    dead = createQueue();
 
     if (argc<2){printf("ERROR: Debe ingresar el tipo de simulación.\n"); return 0;}
 
