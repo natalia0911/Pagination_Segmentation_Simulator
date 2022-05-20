@@ -31,6 +31,9 @@ int isSEGMENTATION = -1;
 //Flag que me indica que tipo de algoritmo estoy usando.
 int isRUNNING = 1;
 
+//Proceso como referencia a la memoria compartida
+Process *memory;
+
 //Colas para que luego el espia acceda
 Queue *ready;
 Queue *finished;
@@ -96,11 +99,30 @@ void generarDatos(){
 
         //AGREGA EL PROCESO
         enqueue (process, ready);
+        printInfo(ready,"Ready");
         //pthread_create (&hiloAgregar, NULL, agregarProceso, &process);
             
     }
     //pthread_join (hiloAgregar, NULL );
     return;
+}
+
+
+void bestFit(Process *process){
+
+    printf("BUscando memoria");
+}
+
+void buscarProcesosEnReady(){
+    
+    while(1){
+        //Mientras haya algo en la cola del ready
+        if (ready->length>0){
+            Process *process = dequeue(ready);
+            bestFit(process);
+        }
+    }
+ 
 }
 
 
@@ -122,8 +144,6 @@ int main(int argc, char *argv[])
 
     pthread_t hiloCreador;//Hilo para el proceso que crea los procesos.
     pthread_t hiloBuscador;//Hilo de la funcion que se encarga de que los procesos soliciten y hagan la busqueda de su espacio.
-
-    printf("Id de memoria: %s\n",tipo);
     
     //1:Paginacipn  2:Segmentacion
     if(tipo==1) {isSEGMENTATION=0;}
@@ -137,7 +157,7 @@ int main(int argc, char *argv[])
     int memoryId = createMemory(memoryKey,tamannio);
     printf("Id de memoria: %i\n",memoryId);
     //Obtener la memoria con shmat
-    Process *memory = getMemory(memoryId);
+    memory = getMemory(memoryId);
 
     //Se crea la cola del ready, finished y dead
     ready = createQueue();
@@ -148,10 +168,10 @@ int main(int argc, char *argv[])
     sem_init(&semPID, 0, 1);
 
     pthread_create (&hiloCreador, NULL, generarDatos, NULL);
-    //pthread_create (&hiloBuscador, NULL, buscarProcesos, NULL);
+    pthread_create (&hiloBuscador, NULL, buscarProcesosEnReady, NULL);
 
     pthread_join(hiloCreador, NULL);//Para que el main espere hasta que el creadorProcesos acabe y no se termine el programa.
-    //pthread_join(hiloBuscador, NULL);
+    pthread_join(hiloBuscador, NULL);
 
     printf("\n\tSTATUS: El creador de proceso se ha detenido.\n");
     return 0;

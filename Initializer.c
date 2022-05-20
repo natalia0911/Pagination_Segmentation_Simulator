@@ -36,7 +36,7 @@ void prepareMemory(int n, Process* Memory){
     //No se si sea necesario, pero era para probar acceso a memoria
 	for (int i=0; i<n; i++)
 	{
-		Memory[i].state = 0;
+		Memory[i].state = 9;  //PONER UN 0
 		printf("Escrito %d\n", Memory[i].state);
 	}
 }
