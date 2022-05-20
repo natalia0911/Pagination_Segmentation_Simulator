@@ -24,7 +24,7 @@ typedef struct Process{
     short burst;
     //Se utiliza si se usa paginación.
     short cantPaginas;
-    //0.En memoria, 1.Ejecutando
+    //0.Espacio vacio, 1.En memoria, 
     short state;
     //Se utiliza si se usa Segmentación.
     Segments *seg;

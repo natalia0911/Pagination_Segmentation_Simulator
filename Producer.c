@@ -33,7 +33,8 @@ int isRUNNING = 1;
 
 //Proceso como referencia a la memoria compartida
 Process *memory;
-
+//Tamaño de la memoria
+int tamannio;
 //Colas para que luego el espia acceda
 Queue *ready;
 Queue *finished;
@@ -109,9 +110,62 @@ void generarDatos(){
 
 
 void bestFit(Process *process){
-
-    printf("BUscando memoria");
+    if (isSEGMENTATION==0){
+        bestFitPagination(process);
+    }
+    else{
+        printf("Bestfit segmetation");
+    }
 }
+
+
+void bestFitPagination(Process *process){
+    //0 P, 1 S
+    short PID = process->PID;
+    short burst = process->burst;
+    short cantPaginas = process->cantPaginas;
+    printf("Cantidad de pags %i \n",cantPaginas);
+    //short state; //0.En memoria, 1.Ejecutando
+    short enoughSpace = 0;
+   	for (int i=0; i<tamannio; i++){
+        if (memory[i].state == 0){
+            if (enoughSpace==cantPaginas){break;}
+            else{enoughSpace = enoughSpace+1;}
+        }
+	}
+    short countSpaces = 0;
+    printf("enoughSpace %i", enoughSpace);
+    if (enoughSpace==cantPaginas){
+        for (int i=0; i<tamannio; i++){
+            if (memory[i].state == 0 ){
+                if (countSpaces<=cantPaginas){
+                    memory[i].PID = PID;
+                    memory[i].burst = burst;
+                    memory[i].cantPaginas = cantPaginas;
+                    memory[i].state = 1;
+                    memory[i].seg = NULL;
+                    countSpaces = countSpaces+1;
+                }
+                else{
+                    break;
+                }
+            }
+                
+        } 
+    }
+    
+    printProcess();
+}
+
+
+void printProcess(){
+	for (int i=0; i<tamannio; i++)
+	{
+		printf("Escrito %d\n", memory[i].state);
+	}
+}
+
+
 
 void buscarProcesosEnReady(){
     
@@ -152,7 +206,7 @@ int main(int argc, char *argv[])
 
     //Obtener la llave de la memoria
     key_t memoryKey = getKey(100);
-    int tamannio = getSize();
+    tamannio = getSize();
     //Obtener el id de la memoria segun clave
     int memoryId = createMemory(memoryKey,tamannio);
     printf("Id de memoria: %i\n",memoryId);

@@ -36,7 +36,7 @@ void prepareMemory(int n, Process* Memory){
     //No se si sea necesario, pero era para probar acceso a memoria
 	for (int i=0; i<n; i++)
 	{
-		Memory[i].state = 9;  //PONER UN 0
+		Memory[i].state = 0;  //PONER UN 0
 		printf("Escrito %d\n", Memory[i].state);
 	}
 }
@@ -46,7 +46,7 @@ int main(){
 
     //Obtener la llave asociada al numero
     key_t memoryKey = getKey(100);
-    int tamannio = 15;
+    int tamannio = 40;
     //Obtener el id de la memoria segun clave
     int memoryId = createMemory(memoryKey,tamannio);
     printf("Id de memoria: %i\n",memoryId);
