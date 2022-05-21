@@ -93,18 +93,19 @@ void *generarDatos(){
 void printProcess(){
 	for (int i=0; i<tamannio; i++)
 	{
-		printf("Escrito %d\n", memory[i].state);
+		printf("Estado %d\n", memory[i].state);
 	}
 }
 
 
-void bestFitPagination(Process *process){
-    //0 P, 1 S
+void firstFitPagination(Process *process){
     short PID = process->PID;
     short burst = process->burst;
     short cantPaginas = process->cantPaginas;
     printf("Cantidad de pags %i \n",cantPaginas);
     //short state; //0.En memoria, 1.Ejecutando
+    //Variable para saber si hay la cantidad necesaria de paginas 
+    //que requiere el proceso
     short enoughSpace = 0;
    	for (int i=0; i<tamannio; i++){
         if (memory[i].state == 0){
@@ -112,12 +113,14 @@ void bestFitPagination(Process *process){
             else{enoughSpace = enoughSpace+1;}
         }
 	}
+    //Varbale para contar las paginas del proceso que ya ha asignado en memoria
+    //Cuando es igual a cantPaginas, deja de asignar y se sale del ciclo
     short countSpaces = 0;
-    printf("enoughSpace %i", enoughSpace);
+    printf("enoughSpace %i \n", enoughSpace);
     if (enoughSpace==cantPaginas){
         for (int i=0; i<tamannio; i++){
             if (memory[i].state == 0 ){
-                if (countSpaces<=cantPaginas){
+                if (countSpaces<cantPaginas){
                     memory[i].PID = PID;
                     memory[i].burst = burst;
                     memory[i].cantPaginas = cantPaginas;
@@ -137,9 +140,9 @@ void bestFitPagination(Process *process){
 }
 
 
-void bestFit(Process *process){
+void firstFit(Process *process){
     if (isSEGMENTATION==0){
-        bestFitPagination(process);
+        firstFitPagination(process);
     }
     else{
         printf("Bestfit segmetation");
@@ -153,7 +156,7 @@ void *buscarProcesosEnReady(){
         if (ready->length>0){
             Node *nodo = dequeue(ready);
             Process *process = nodo->process;
-            bestFit(process);
+            firstFit(process);
         }
     }
  
@@ -166,7 +169,7 @@ int main(int argc, char *argv[])
     /*
     COMPILAR EL PROGRAMA
     gcc Producer.c -o p2  -pthread
-    EJECUTAR EL PROGRAMA
+    EJECUTAR EL PROGRAMA, 1 pag y 2 seg
     ./p2 [1|2]
     */
 
