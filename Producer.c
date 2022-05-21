@@ -136,6 +136,7 @@ void firstFitPagination(Process *process){
         } 
     }
     
+    addToBinnacle(process, "\n%i\t\tAsignado memoria\tAsignacion\t\t%s\t\tspace\t\t\t\t%i", 1);
     printProcess();
 }
 

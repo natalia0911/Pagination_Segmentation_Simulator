@@ -4,8 +4,23 @@
 #include <sys/shm.h>
 #include <sys/ipc.h>
 #include <sys/types.h>
+#include <time.h>
+#include <assert.h> 
 #include "Process.c"
 #define IPC_RESULT_ERROR (-1)
+
+//-----------------------FUNCIONES DE TIEMPO--------------------------//
+
+char* getTime(){
+
+	time_t t = time(NULL);
+    struct tm *tm = localtime(&t);
+    char s[64];
+    assert(strftime(s, sizeof(s), "%c", tm));
+	char *time = s;
+	return time;
+
+}
 
 //---------------------FUNCIONES COMPARTIDAS DE ARCHIVOS---------------------//
 FILE* openFile(const char* name, char *modo){
@@ -39,19 +54,21 @@ int getSize(){
 }
 
 
-void addToBinnacle(int id_Proceso, char* mensaje, int success){
+void addToBinnacle(Process *process, char* mensaje, int success){
 	/**
 	 * @brief Escribe en la bitacora PID, acción, tipo, 
 	 * hora, espacio asignado, entrò o no a la memoria.
+	 * PID\t\tAction\t\t\tType\t\t\t\tTime\t\t\t\tAllocated space\t\t\t\tEntered
+	 * "%i\t\tAction\t\t\tType\t\t\t\t%s\t\t\t\tAllocated space\t\t\t\t%i"
 	 */
 
 	FILE* file;     
-	file = openFile("bitacora.txt","a+");
+	file = openFile("binnacle.txt","a+");
 	if (success)
 	{
-    	fprintf (file, "%s", mensaje); //Aqui poner todos los datos del procesp
+    	fprintf (file, mensaje, process->PID, getTime(), success); //Aqui poner todos los datos del procesp
 	}else{
-		fprintf (file, "%s", mensaje);
+		fprintf (file, mensaje, process->PID, getTime(), success);
 	}
 			
     fclose(file);

@@ -27,7 +27,7 @@ void initializeBinnacle(){
 	 */
 	FILE *file;     
 	file = openFile("binnacle.txt","w");
-	fprintf (file, "%s","PID\t\tAction\t\t\tType\t\t\tAccion\t\t\t\tTime\t\t\t\tAllocated space\t\t\t\tEntered");
+	fprintf (file, "%s","PID\t\tAction\t\t\t\tType\t\t\tTime\t\t\t\t\t\tAllocated space\t\t\tEntered");
     fclose(file);
 }
 
@@ -46,7 +46,7 @@ int main(){
 
     //Obtener la llave asociada al numero
     key_t memoryKey = getKey(100);
-    int tamannio = 40;
+    int tamannio = 20;
     //Obtener el id de la memoria segun clave
     int memoryId = createMemory(memoryKey,tamannio);
     printf("Id de memoria: %i\n",memoryId);

@@ -1,1 +1,3 @@
-PID		Action			Type			Accion				Time				Allocated space				Entered
+PID		Action				Type			Time						Allocated space			Entered
+0		Asignado memoria	Asignacion		Fri May 20 23:46:15 2022		space				1
+0		Asignado memoria	Asignacion		Sat May 21 00:22:51 2022		space				1
