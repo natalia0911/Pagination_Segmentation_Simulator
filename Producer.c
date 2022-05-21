@@ -22,7 +22,6 @@
 
 #define MICROSECONDOS 1000000
 
-sem_t semPID;
 short PID_AutoIncrement=0;
 
 //Flag que me indica que tipo de algoritmo estoy usando.
@@ -43,49 +42,29 @@ Queue *dead;
 
 
 
-void generarDatos(){
+void *generarDatos(){
     short burst;
     short espera;
     short PID;
     short cantidadPagSeg;
     short espaciosSeg;
 
-    Process *process;
-
-    pthread_t hiloAgregar;   
+    Process *process; 
 
     //Usar un flag para detenerlo.
     while(isRUNNING){//De momento usa esa condición para hacer las pruebas
-
-        //ESPERA ENTRE minEspera A maxEspera
-        espera = random() % ((MAXTIME) - (MINTIME)+1) + (MINTIME);
-
-        //Usa la variable para pausar el hilo.
-        usleep (espera*MICROSECONDOS);
         
         burst = random() % ((MAXBURST) - (MINBURST)+1) + (MINBURST);
 
         if (isSEGMENTATION==0){//Paginación
             //Ovtiene la cantidad de paginación.
             cantidadPagSeg = random() % ((MAXPAGES) - (MINPAGSEGESP)+1) + (MINPAGSEGESP);
-
-            //Región critiga para obtener el IP del proceso.
-            sem_wait(&semPID);
-            PID=PID_AutoIncrement++;//Lo obtiene y lo incrementa.
-            sem_post(&semPID); 
-
-            process = createProcessPag(PID, burst, cantidadPagSeg);
+            process = createProcessPag(PID_AutoIncrement++, burst, cantidadPagSeg);
 
         }else if (isSEGMENTATION==1){//Segmentación.
             //Obtiene la cantidad de segmentos
             cantidadPagSeg = random() % ((MAXSEGMENTS) - (MINPAGSEGESP)+1) + (MINPAGSEGESP);
-
-            //Región critiga para obtener el IP del proceso.
-            sem_wait(&semPID);
-            PID=PID_AutoIncrement++;//Lo obtiene y lo incrementa.
-            sem_post(&semPID); 
-
-            process = createProcessSeg(PID, burst, cantidadPagSeg);
+            process = createProcessSeg(PID_AutoIncrement++, burst, cantidadPagSeg);
 
             for (int i=0; i<cantidadPagSeg; i++){
                 espaciosSeg = random() % ((MAXESPACIOS) - (MINPAGSEGESP)+1) + (MINPAGSEGESP);
@@ -101,21 +80,21 @@ void generarDatos(){
         //AGREGA EL PROCESO
         enqueue (process, ready);
         printInfo(ready,"Ready");
-        //pthread_create (&hiloAgregar, NULL, agregarProceso, &process);
+
+        //ESPERA ENTRE minEspera A maxEspera
+        espera = random() % ((MAXTIME) - (MINTIME)+1) + (MINTIME);
+        //printf("STATUS: Esperando %d segundos.\n", espera);
+        usleep (espera*MICROSECONDOS);//Usa la variable para pausar el hilo.
             
     }
-    //pthread_join (hiloAgregar, NULL );
-    return;
 }
 
 
-void bestFit(Process *process){
-    if (isSEGMENTATION==0){
-        bestFitPagination(process);
-    }
-    else{
-        printf("Bestfit segmetation");
-    }
+void printProcess(){
+	for (int i=0; i<tamannio; i++)
+	{
+		printf("Escrito %d\n", memory[i].state);
+	}
 }
 
 
@@ -158,21 +137,22 @@ void bestFitPagination(Process *process){
 }
 
 
-void printProcess(){
-	for (int i=0; i<tamannio; i++)
-	{
-		printf("Escrito %d\n", memory[i].state);
-	}
+void bestFit(Process *process){
+    if (isSEGMENTATION==0){
+        bestFitPagination(process);
+    }
+    else{
+        printf("Bestfit segmetation");
+    }
 }
 
-
-
-void buscarProcesosEnReady(){
+void *buscarProcesosEnReady(){
     
     while(1){
         //Mientras haya algo en la cola del ready
         if (ready->length>0){
-            Process *process = dequeue(ready);
+            Node *nodo = dequeue(ready);
+            Process *process = nodo->process;
             bestFit(process);
         }
     }
@@ -217,9 +197,6 @@ int main(int argc, char *argv[])
     ready = createQueue();
     finished = createQueue();
     dead = createQueue();
-
-    //Inicia el semaforo para el ID
-    sem_init(&semPID, 0, 1);
 
     pthread_create (&hiloCreador, NULL, generarDatos, NULL);
     pthread_create (&hiloBuscador, NULL, buscarProcesosEnReady, NULL);
