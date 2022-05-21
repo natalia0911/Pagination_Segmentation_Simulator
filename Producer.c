@@ -43,6 +43,10 @@ Queue *dead;
 
 
 void *generarDatos(){
+    /**
+     * @brief Genera procesos de manera random, con las condiciones especificadas de 
+     * tiempo y cantidad de paginas o segmentos segun corresponda.
+     */
     short burst;
     short espera;
     short PID;
@@ -91,6 +95,9 @@ void *generarDatos(){
 
 
 void printProcess(){
+    /**
+     * @brief Funcion para ver la memoria compartida (Uso del programador)
+     */
 	for (int i=0; i<tamannio; i++)
 	{
 		printf("Espacio: %d\tPID: %d\tEstado %d\n",i,memory[i].PID,memory[i].state);
@@ -98,6 +105,9 @@ void printProcess(){
 }
 
 void vaciarMemoria(){
+    /**
+     * @brief Funcion para ver inicializar o vaciar TODA la memoria compartida (Uso del programador)
+     */
 	for (int i=0; i<tamannio; i++){
 		memory[i].state = 0;
         memory[i].PID = 0;
@@ -108,8 +118,28 @@ void vaciarMemoria(){
 }
 
 
+void liberarMemoria(int PID){
+    /**
+     * @brief Liberar un espacio de memoria, donde se encuentre el proceso indicado
+     * 
+     */
+	for (int i=0; i<tamannio; i++){
+        if (memory[i].PID = PID){
+            memory[i].state = 0;
+            memory[i].PID = 0;
+            memory[i].burst = 0;
+            memory[i].cantPaginas=0;
+            memory[i].seg = NULL;
+        }
+	}
+}
+
 
 void firstFitSegmentacion(Process *process){
+    /**
+     * @brief Algoritmo de asignacion de memoria para procesos segmentados
+     * 
+     */
     short PID = process->PID;
     short burst = process->burst;
     short cantSegmentos = process->seg->cantidad;
@@ -184,22 +214,29 @@ void firstFitSegmentacion(Process *process){
         //Si salió y k es igual al tamaño significa que no encontró campo para ese segmento.
         if(k==tamannio){
             //Agrega el proceso a los muertos.
-            printf("\t\nPROCESO DENEGADO.\n");
+            printf("\t\nPROCESO DENEGADO.\n");                                        //success = 0
+            addToBinnacle(process, "\n%i\t\tMemory  allocation\tAllocation\t\t%s\t\t%i\t\t\t\t\t%i", 0, 1);
             break;
         }
     }
-    if(i==cantSegmentos) printf("\t\nPROCESO ASIGNADO..\n");
-    //Como el proceso ha estado agregandose en memoria
-    //Solo falta agregarlo a la bitacora.
-    printProcess();
+    if(i==cantSegmentos){
+        printf("\t\nPROCESO ASIGNADO..\n");
+        addToBinnacle(process, "\n%i\t\tDenying allocation\tAllocation\t\t%s\t\t%i\t\t\t\t\t%i", 1, 1);
+        printProcess();
+    } 
+   
+
 }
 
 void firstFitPagination(Process *process){
+    /**
+     * @brief Algoritmo de asignacion de memoria para procesos paginados
+     * 
+     */
     short PID = process->PID;
     short burst = process->burst;
     short cantPaginas = process->cantPaginas;
     printf("Cantidad de pags %i \n",cantPaginas);
-    //short state; //0.En memoria, 1.Ejecutando
     //Variable para saber si hay la cantidad necesaria de paginas 
     //que requiere el proceso
     short enoughSpace = 0;
@@ -209,10 +246,11 @@ void firstFitPagination(Process *process){
             else{enoughSpace = enoughSpace+1;}
         }
 	}
-    //Varbale para contar las paginas del proceso que ya ha asignado en memoria
+    //Variable para contar las paginas del proceso que ya ha asignado en memoria
     //Cuando es igual a cantPaginas, deja de asignar y se sale del ciclo
+    //Si entra a este ciclo asigna la memoria, de lo contrario no habia espacio
     short countSpaces = 0;
-    printf("enoughSpace %i \n", enoughSpace);
+    printf("Disponible %i \n", enoughSpace);
     if (enoughSpace==cantPaginas){
         for (int i=0; i<tamannio; i++){
             if (memory[i].state == 0 ){
@@ -230,24 +268,36 @@ void firstFitPagination(Process *process){
             }
                 
         } 
+        addToBinnacle(process, "\n%i\t\tMemory  allocation\tAllocation\t\t%s\t\t%i\t\t\t\t\t%i", 1, 0);
+        printProcess();
+    }
+    else{
+                                                                                     //success = 0
+        addToBinnacle(process, "\n%i\t\tDenying allocation\tAllocation\t\t%s\t\t%i\t\t\t\t\t%i", 0, 0);
+        //PROCESO MUERE 
     }
     
-    addToBinnacle(process, "\n%i\t\tAsignado memoria\tAsignacion\t\t%s\t\tspace\t\t\t\t%i", 1);
-    printProcess();
 }
 
 
 void firstFit(Process *process){
+    /**
+     * @brief Funcion de administracion de la asignacion de la memoria
+     * segun sea paginacion o segmetacion llama a la funcion correspondiente.
+     */
     if (isSEGMENTATION==0){
         firstFitPagination(process);
     }
     else{
         firstFitSegmentacion(process);
-        //printf("\tBestfit segmetation\n");
     }
 }
 
 void *buscarProcesosEnReady(){
+    /**
+     * @brief Funcion que ejecuta un hilo para verificar si hay algo en la cola del ready
+     * para enviar a los procesos a colocarse en algun espacio libre.
+     */
     
     while(1){
         //Mientras haya algo en la cola del ready
@@ -299,7 +349,7 @@ int main(int argc, char *argv[])
     finished = createQueue();
     dead = createQueue();
 
-    vaciarMemoria();
+    vaciarMemoria();  //ESTO SOLO CUANDO EL PROGRAMADOR LO NECESITA
 
     pthread_create (&hiloCreador, NULL, generarDatos, NULL);
     pthread_create (&hiloBuscador, NULL, buscarProcesosEnReady, NULL);

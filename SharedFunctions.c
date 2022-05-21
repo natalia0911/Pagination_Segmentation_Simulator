@@ -12,7 +12,10 @@
 //-----------------------FUNCIONES DE TIEMPO--------------------------//
 
 char* getTime(){
-
+	/**
+	 * @brief Funcion que retorna la hora del sistema
+	 * 
+	 */
 	time_t t = time(NULL);
     struct tm *tm = localtime(&t);
     char s[64];
@@ -21,6 +24,27 @@ char* getTime(){
 	return time;
 
 }
+
+
+
+//--------------------FUNCIONES DE CALCULO DE ESPACIO-----------------------//
+int spaceSegmentation(Process *process){
+	/**
+	 * @brief  Calcula el espacio asignado cuando es segmentacion.
+	 */
+	Segments *sg = process->seg;
+	int sp = sizeof(Process);
+	return sp*sg->espaciosSeg1 + sp*sg->espaciosSeg2 + sp*sg->espaciosSeg3 + sp*sg->espaciosSeg4 + sp*sg->espaciosSeg5; 
+}
+
+int spacePagination(Process *process){
+	/**
+	 * @brief Calcula el espacio asignado cuando es paginacion.
+	 */
+	return sizeof(Process)*process->cantPaginas;
+}
+
+
 
 //---------------------FUNCIONES COMPARTIDAS DE ARCHIVOS---------------------//
 FILE* openFile(const char* name, char *modo){
@@ -54,27 +78,24 @@ int getSize(){
 }
 
 
-void addToBinnacle(Process *process, char* mensaje, int success){
+void addToBinnacle(Process *process, char* mensaje, int success, int isSegmentation){
 	/**
 	 * @brief Escribe en la bitacora PID, acción, tipo, 
 	 * hora, espacio asignado, entrò o no a la memoria.
 	 * PID\t\tAction\t\t\tType\t\t\t\tTime\t\t\t\tAllocated space\t\t\t\tEntered
-	 * "%i\t\tAction\t\t\tType\t\t\t\t%s\t\t\t\tAllocated space\t\t\t\t%i"
 	 */
 
 	FILE* file;     
 	file = openFile("binnacle.txt","a+");
-	if (success)
-	{
-    	fprintf (file, mensaje, process->PID, getTime(), success); //Aqui poner todos los datos del procesp
+	if (isSegmentation){
+    	fprintf (file, mensaje, process->PID, getTime(), spaceSegmentation(process), success); //Aqui poner todos los datos del procesp
 	}else{
-		fprintf (file, mensaje, process->PID, getTime(), success);
+		fprintf (file, mensaje, process->PID, getTime(), spacePagination(process), success);
 	}
 			
     fclose(file);
 
 }
-
 
 
 //-----------------------FUNCIONES DE MEMORIA--------------------------//

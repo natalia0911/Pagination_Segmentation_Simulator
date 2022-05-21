@@ -59,7 +59,7 @@ int main(){
 
     //No se si sea necesario, pero era para probar acceso a memoria
     prepareMemory(tamannio,memory);
-
+    printf("Size of process %lu \n", sizeof(Process));
     //Liberar memoria.
 	shmdt ((char *)memory);
 
