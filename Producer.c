@@ -17,12 +17,12 @@
 #define MAXBURST 60
 #define MINBURST 20
 
-#define MAXTIME 60
-#define MINTIME 30
+#define MAXTIME 6
+#define MINTIME 3
 
 #define MICROSECONDOS 1000000
 
-short PID_AutoIncrement=0;
+short PID_AutoIncrement=1;
 
 //Flag que me indica que tipo de algoritmo estoy usando.
 int isSEGMENTATION = -1;
@@ -79,7 +79,7 @@ void *generarDatos(){
 
         //AGREGA EL PROCESO
         enqueue (process, ready);
-        printInfo(ready,"Ready");
+        //printQueue(ready, isSEGMENTATION);
 
         //ESPERA ENTRE minEspera A maxEspera
         espera = random() % ((MAXTIME) - (MINTIME)+1) + (MINTIME);
@@ -93,10 +93,106 @@ void *generarDatos(){
 void printProcess(){
 	for (int i=0; i<tamannio; i++)
 	{
-		printf("Estado %d\n", memory[i].state);
+		printf("Espacio: %d\tPID: %d\tEstado %d\n",i,memory[i].PID,memory[i].state);
 	}
 }
 
+void vaciarMemoria(){
+	for (int i=0; i<tamannio; i++){
+		memory[i].state = 0;
+        memory[i].PID = 0;
+        memory[i].burst = 0;
+        memory[i].cantPaginas=0;
+        memory[i].seg = NULL;
+	}
+}
+
+
+
+void firstFitSegmentacion(Process *process){
+    short PID = process->PID;
+    short burst = process->burst;
+    short cantSegmentos = process->seg->cantidad;
+    printf("Cantidad de segs %i del PID %d \n",cantSegmentos,PID);
+
+    printf("espaciosSeg1 %i \n",process->seg->espaciosSeg1);
+    printf("espaciosSeg2 %i \n",process->seg->espaciosSeg2);
+    printf("espaciosSeg3 %i \n",process->seg->espaciosSeg3);
+    printf("espaciosSeg4 %i \n",process->seg->espaciosSeg4);
+    printf("espaciosSeg5 %i \n",process->seg->espaciosSeg5);
+
+    int cantidad;//Cantidad de estacios para cada segmento.
+    //Para cada segmento.
+    int i=0;
+    for (i;i<cantSegmentos;i++){
+        //printf("Recorre los segmentos\n");
+        if (i==0) {cantidad=process->seg->espaciosSeg1;}
+        if (i==1) {cantidad=process->seg->espaciosSeg2;}
+        if (i==2) {cantidad=process->seg->espaciosSeg3;}
+        if (i==3) {cantidad=process->seg->espaciosSeg4;}
+        if (i==4) {cantidad=process->seg->espaciosSeg5;}
+
+        int k=0;
+        //printf("Valor de K: %d y valor de Tamaño: %d\n",k,tamannio);
+        for (k; k<tamannio; k++){//Recorre la memoria.
+            //printf("Recorre la memoria\n");
+
+            if (memory[k].state == 0){//Si está vacio.
+
+                int e=0;
+                for(e;e<cantidad;e++){
+                    if( (k+e)==tamannio ){//Si se sale de la memoria falla.
+                        //printf("Se sale del tamaño de la memoria\n");
+                        //Vacía el contenido, lo deja como si no se hubiera agregado nada.
+                        for (int p=0; p<tamannio; p++){
+                            if(memory[p].PID==PID){
+                                memory[p].state = 0;
+                                memory[p].PID = 0;
+                                memory[p].burst = 0;
+                                memory[p].cantPaginas=0;
+                                memory[p].seg = NULL;
+                            }
+                            
+                        }
+                        break;
+                    }
+                    
+                    //Si está vacio para ese espacio lo coloca.
+                    if (memory[k+e].state == 0){
+                        //printf("Agrega Temporal\n");
+                        memory[k+e].state = 1;
+                        memory[k+e].PID = PID;
+                        memory[k+e].burst = burst;
+                        memory[k+e].cantPaginas=0;
+                        memory[k+e].seg = process->seg;
+                    }else{//Si está ocupado borra deja los espacios otra vez desocupados.
+                        //printf("Borra lo temporales Temporal\n");   
+                        for (int j=0;j<e;j++){//Vacía el contenido, lo deja como si no se hubiera agregado nada.
+                            memory[k+j].state = 0;
+                            memory[k+j].PID = 0;
+                            memory[k+j].burst = 0;
+                            memory[k+j].cantPaginas=0;
+                            memory[k+j].seg = NULL;
+                        }break;
+                    }
+                }
+                /*Si salío y las variables son iguales significa que encontró un lugar
+                para los espacios de ese segmento, entonces que continue con el siguiente*/
+                if(e==cantidad){break;}
+            }
+        }
+        //Si salió y k es igual al tamaño significa que no encontró campo para ese segmento.
+        if(k==tamannio){
+            //Agrega el proceso a los muertos.
+            printf("\t\nPROCESO DENEGADO.\n");
+            break;
+        }
+    }
+    if(i==cantSegmentos) printf("\t\nPROCESO ASIGNADO..\n");
+    //Como el proceso ha estado agregandose en memoria
+    //Solo falta agregarlo a la bitacora.
+    printProcess();
+}
 
 void firstFitPagination(Process *process){
     short PID = process->PID;
@@ -146,7 +242,8 @@ void firstFit(Process *process){
         firstFitPagination(process);
     }
     else{
-        printf("Bestfit segmetation");
+        firstFitSegmentacion(process);
+        //printf("\tBestfit segmetation\n");
     }
 }
 
@@ -201,6 +298,8 @@ int main(int argc, char *argv[])
     ready = createQueue();
     finished = createQueue();
     dead = createQueue();
+
+    vaciarMemoria();
 
     pthread_create (&hiloCreador, NULL, generarDatos, NULL);
     pthread_create (&hiloBuscador, NULL, buscarProcesosEnReady, NULL);
