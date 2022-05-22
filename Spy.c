@@ -1,6 +1,11 @@
 //Librerias 
 #include <stdio.h>
 #include "SharedFunctions.c"
+#include <string.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 //Constantes
 
 #define SHOWPROCESS 1 
@@ -16,16 +21,72 @@
 Process *memory;
 //Tamaño de la memoria
 int tamannio;
+//Bandera para proceso en ejecucion para solo mostrar una vez
+int exe = 0;
+
+void executionProcess(){
+    printf("Proceso en ejecucion:\n");
+
+    /*Entra en la memoria compartida y muestra el proceso en ejecucion
+    *Como los procesos no salen le la memoria siempre muesta el PID 1 
+    *Cuendo se saquen los procesos ya se mostrada el proceso real en ejecucion 
+    */ 
+    for (int i=0; i<tamannio; i++){
+        if (memory[i].state == 1 && exe == 0)
+        {
+            printf("PID: %d\n",memory[i].PID);
+            exe=1;
+        }
+	}
+}
+
+void readFile(const char* filename){
+    FILE* input_file = fopen(filename, "r");
+    if (!input_file)
+        exit(EXIT_FAILURE);
+
+    char *contents = NULL;
+    size_t len = 0;
+    while (getline(&contents, &len, input_file) != -1){
+        printf("PID: %s", contents);
+    }
+
+    fclose(input_file);
+    free(contents);
+}
+
+void blockProcess(){
+    printf("Procesos bloqueados:\n");
+    readFile("Block_process.txt");
+}
+
+void searchProcess(){
+    printf("\nProceso en busqueda:\n");
+    readFile("Search_process.txt");
+}
+
+void deadProcess(){
+    printf("\nProcesos muertos:\n");
+    readFile("Dead_process.txt");
+}
+
+void finishedProcess(){
+    printf("\nProcesos terminados:\n");
+    readFile("Finished_process.txt");
+}
+
 void showProcessState(){
     
-    printf("showProcessState()");
-
+    executionProcess();
+    blockProcess();
+    searchProcess();
+    deadProcess();
+    finishedProcess();
 }
 
 
 void showMemoryState(){
     
-    //printf("showMemoryState");
     printf("#pagina\tProceso\n");
 
 	for (int i=0; i<tamannio; i++){
