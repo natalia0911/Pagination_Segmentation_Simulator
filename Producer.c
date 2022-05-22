@@ -40,6 +40,52 @@ Queue *dead;
 
 Queue *enMemory;
 
+
+#if defined(__GNU_LIBRARY__) && !defined(_SEM_SEMUN_UNDEFINED)
+// union ya definida en sys/sem.h
+#else
+union semun { 
+	int val;
+	struct semid_ds *buf;
+	unsigned short int *array;
+	struct seminfo *__buf;
+};
+#endif
+
+//Variables para los semaforos
+int semaphoreId;
+struct sembuf Operation;
+struct sembuf OFinalice;
+union semun arg;
+int goAhead = 1;
+
+//Funciones del semaforo
+void wait(){
+    printf("En wait...\n");
+	Operation.sem_op = -1;
+	semop (semaphoreId, &Operation, 1);
+}
+
+void signal(){
+    printf("Signal...\n");
+	Operation.sem_op = 1;
+	semop (semaphoreId, &Operation, 1);
+}
+
+void * checkStop(){
+    /**
+     * @brief Si el finalizador usa el semaforo para finalizar, 
+     * se dejan de crear procesos.
+     */
+	semop (semaphoreId, &OFinalice, 1);
+	goAhead = 0;
+	exit(0);
+
+}
+
+
+
+
 void printProcess(){
 	for (int i=0; i<tamannio; i++)
 	{
@@ -100,47 +146,6 @@ void *ejecucionMemoria(){
         } 
     }
 }
-
-#if defined(__GNU_LIBRARY__) && !defined(_SEM_SEMUN_UNDEFINED)
-// union ya definida en sys/sem.h
-#else
-union semun { 
-	int val;
-	struct semid_ds *buf;
-	unsigned short int *array;
-	struct seminfo *__buf;
-};
-#endif
-
-//Variables para los semaforos#####
-int semaphoreId;
-struct sembuf Operation;
-struct sembuf OFinalice;
-union semun arg;
-int goAhead = 1;
-
-//Funciones del semaforo
-void wait(){
-	Operation.sem_op = -1;
-	semop (semaphoreId, &Operation, 1);
-}
-
-void signal(){
-	Operation.sem_op = 1;
-	semop (semaphoreId, &Operation, 1);
-}
-
-void * checkStop(){
-    /**
-     * @brief Si el finalizador usa el semaforo para finalizar, 
-     * se dejan de crear procesos.
-     */
-	semop (semaphoreId, &OFinalice, 1);
-	goAhead = 0;
-	exit(0);
-
-}
-
 
 void *generarDatos(){
     /**
@@ -233,6 +238,8 @@ void firstFitSegmentacion(Process *process){
     short PID = process->PID;
     short burst = process->burst;
     short cantSegmentos = process->seg->cantidad;
+    //El proceso que sale del ready a buscar memoria se agrega al archivo para ser consultado por el espia
+    addToSearch(PID);
     printf("Cantidad de segs %i del PID %d \n",cantSegmentos,PID);
 
     printf("EspSeg1: %i \t",process->seg->espaciosSeg1);
@@ -244,6 +251,7 @@ void firstFitSegmentacion(Process *process){
     int cantidad;//Cantidad de estacios para cada segmento.
     //Para cada segmento.
     int i=0;
+    wait();
     for (i;i<cantSegmentos;i++){
         //printf("Recorre los segmentos\n");
         if (i==0) {cantidad=process->seg->espaciosSeg1;}
@@ -312,11 +320,13 @@ void firstFitSegmentacion(Process *process){
             addToSearch(0);
             break;
         }
+        //Da el paso para accesar memoria
+        signal();
     }
     if(i==cantSegmentos){
         printf("\t\nPROCESO ASIGNADO.\n");
         process->state=1;
-        enqueue(process,enMemory);
+        enqueue(process,enMemory); //Listo para ejecutar
         addToBinnacle(process, "\n%i\t\tDenying allocation\tAllocation\t\t%s\t\t%i\t\t\t\t\t%i", 1, 1);
         //Agregar el proceso terminado al archivo para verlo desde el espia 
         addToFinished(process->PID);
@@ -336,6 +346,8 @@ void firstFitPagination(Process *process){
     short PID = process->PID;
     short burst = process->burst;
     short cantPaginas = process->cantPaginas;
+    //El proceso que sale del ready a buscar memoria se agrega al archivo para ser consultado por el espia
+    addToSearch(PID);
     printf("Cantidad de pags %i \n",cantPaginas);
     //Variable para saber si hay la cantidad necesaria de paginas 
     //que requiere el proceso
@@ -351,7 +363,10 @@ void firstFitPagination(Process *process){
     //Si entra a este ciclo asigna la memoria, de lo contrario no habia espacio
     short countSpaces = 0;
     printf("Disponible %i \n", enoughSpace);
+
     if (enoughSpace==cantPaginas){
+        //Empieza a asignar memoria y se bloquea el acceso
+        wait();
         for (int i=0; i<tamannio; i++){
             if (memory[i].state == 0 ){
                 if (countSpaces<cantPaginas){
@@ -368,6 +383,9 @@ void firstFitPagination(Process *process){
             }
                 
         }
+        //Da el paso para accesar memoria
+        signal();
+
         printf("\t\nPROCESO ASIGNADO.\n");
         process->state=1;
         enqueue(process,enMemory); 
@@ -414,8 +432,6 @@ void *buscarProcesosEnReady(){
         if (ready->length>0){
             Node *nodo = dequeue(ready);
             Process *process = nodo->process;
-            //El proceso que sale del ready a buscar memoria se agrega al archivo para ser consultado por el espia
-            addToSearch(process->PID);
             firstFit(process);
         }
     }

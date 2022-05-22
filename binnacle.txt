@@ -1,3 +1,5 @@
 PID		Action				Type			Time						Allocated space			Entered
 1		Memory  allocation	Allocation		Sat May 21 23:14:48 2022		96					1
 2		Memory  allocation	Allocation		Sat May 21 23:14:54 2022		32					1
+1		Memory  allocation	Allocation		Sun May 22 11:49:10 2022		80					1
+2		Memory  allocation	Allocation		Sun May 22 11:49:14 2022		64					1

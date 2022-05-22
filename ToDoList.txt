@@ -10,19 +10,30 @@
 	3.1 Hacer un ready LISTO 
 	3.2 Se indica si segmentacion o paginacion. LISTO
 	3.3 Se crean procesos cada 30-60 segundos. LISTO
-	3.4 Solo un proceso puede estar buscando memoria.
+	3.4 Solo un proceso puede estar buscando memoria.  (FALTA)
 	3.4 Si es segmentacion es con best fit, si es paginacion cualquiera.  LISTO
 	3.5 Cada proceso hace sleep y toma la region critica de forma exclusiva.
 
 4. Espía
-	4.1 Estado de la memoria
+	4.1 Estado de la memoria LISTO
 	4.2 Estado de procesos: PID de los que están en memoria, PID del que busca memoria, PID bloqueados, PID muertos, PID terminados.
 
 5. Bitacora. LISTO
 
-6. Finalizador.
+6. Finalizador. (FALTA)
 
-
+FALTA
+Hacer programa Finalizador
+Procesos bloqueados
+Actualizar busqueda 
+Usar semaforo en el espacio
+Otro semaforo para los archivo, uno por cada archivo?
+Cambiar a procesos con hilos
+Cambiar la ejecuciòn
+Lecciones aprendidas 
+Estrategias de semaforo y sincronizacion
+Casos de prueba 
+Manual de usuario
 
 
 NOTAS:
