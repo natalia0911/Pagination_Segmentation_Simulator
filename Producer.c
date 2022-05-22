@@ -39,6 +39,68 @@ Queue *ready;
 Queue *finished;
 Queue *dead;
 
+Queue *enMemory;
+
+void printProcess(){
+	for (int i=0; i<tamannio; i++)
+	{
+		printf("Espacio: %d\tPID: %d\tEstado %d\n",i,memory[i].PID,memory[i].state);
+	}
+}
+
+void sacarProceso(int PID){
+    //printf("\n\t\tEliminando el proceso: %d\n\n",PID);
+    for (int i=0; i<tamannio; i++){
+        if (memory[i].state == 1 && memory[i].PID==PID){
+            memory[i].state = 0;
+            memory[i].PID = 0;
+            memory[i].burst = 0;
+            memory[i].cantPaginas=0;
+            memory[i].seg = NULL;
+        }
+	}
+}
+
+void *ejecucionMemoria(){
+    int size;
+    Node* borrado;
+    while(isRUNNING){
+
+        usleep (MICROSECONDOS);//Espera de 1 segundo.
+
+        if(enMemory->length==0) continue;
+
+        size=enMemory->length;
+        
+        Node* actual = enMemory->first;
+        for (int i=0; i<size; i++){//Se realiza así para que le baje 1 segundo solo a los que ya estaban en cola en ese momento.
+            if(actual->process->state){//Si el proceso está activo.
+                actual->process->burst--;
+                if(actual->process->burst==0){
+                    //Los marca como vacios.
+                    actual->process->state=0;
+                    //Los saca de la memoria.
+                    sacarProceso(actual->process->PID);
+                    //printf("Borrado...\n");
+                    //printf("..................................................\n");
+                    printProcess();
+                    //printf("..................................................\n");
+                    //printf("Proceso Terminado: %d\n",actual->process->PID);
+                }
+            }
+            actual = actual->next;
+        }
+        //Borra todos los "vacios".
+        actual = enMemory->first;
+        while(actual!=NULL){
+            if(actual->process->state==0){
+                borrado = deleteNode(actual->process, enMemory);
+                //printf("\tIntenta...\n");
+            }
+            actual = actual->next;
+        } 
+    }
+}
 
 
 
@@ -94,16 +156,6 @@ void *generarDatos(){
 }
 
 
-void printProcess(){
-    /**
-     * @brief Funcion para ver la memoria compartida (Uso del programador)
-     */
-	for (int i=0; i<tamannio; i++)
-	{
-		printf("Espacio: %d\tPID: %d\tEstado %d\n",i,memory[i].PID,memory[i].state);
-	}
-}
-
 void vaciarMemoria(){
     /**
      * @brief Funcion para ver inicializar o vaciar TODA la memoria compartida (Uso del programador)
@@ -145,11 +197,11 @@ void firstFitSegmentacion(Process *process){
     short cantSegmentos = process->seg->cantidad;
     printf("Cantidad de segs %i del PID %d \n",cantSegmentos,PID);
 
-    printf("espaciosSeg1 %i \n",process->seg->espaciosSeg1);
-    printf("espaciosSeg2 %i \n",process->seg->espaciosSeg2);
-    printf("espaciosSeg3 %i \n",process->seg->espaciosSeg3);
-    printf("espaciosSeg4 %i \n",process->seg->espaciosSeg4);
-    printf("espaciosSeg5 %i \n",process->seg->espaciosSeg5);
+    printf("EspSeg1: %i \t",process->seg->espaciosSeg1);
+    printf("EspSeg2: %i \t",process->seg->espaciosSeg2);
+    printf("EspSeg3: %i \t",process->seg->espaciosSeg3);
+    printf("EspSeg4: %i \t",process->seg->espaciosSeg4);
+    printf("EspSeg5: %i \n",process->seg->espaciosSeg5);
 
     int cantidad;//Cantidad de estacios para cada segmento.
     //Para cada segmento.
@@ -220,7 +272,9 @@ void firstFitSegmentacion(Process *process){
         }
     }
     if(i==cantSegmentos){
-        printf("\t\nPROCESO ASIGNADO..\n");
+        printf("\t\nPROCESO ASIGNADO.\n");
+        process->state=1;
+        enqueue(process,enMemory);
         addToBinnacle(process, "\n%i\t\tDenying allocation\tAllocation\t\t%s\t\t%i\t\t\t\t\t%i", 1, 1);
         printProcess();
     } 
@@ -267,7 +321,10 @@ void firstFitPagination(Process *process){
                 }
             }
                 
-        } 
+        }
+        printf("\t\nPROCESO ASIGNADO.\n");
+        process->state=1;
+        enqueue(process,enMemory); 
         addToBinnacle(process, "\n%i\t\tMemory  allocation\tAllocation\t\t%s\t\t%i\t\t\t\t\t%i", 1, 0);
         printProcess();
     }
@@ -329,7 +386,8 @@ int main(int argc, char *argv[])
 
     pthread_t hiloCreador;//Hilo para el proceso que crea los procesos.
     pthread_t hiloBuscador;//Hilo de la funcion que se encarga de que los procesos soliciten y hagan la busqueda de su espacio.
-    
+    pthread_t hiloEjecucion;//Hilo de la funcion que se encarga de que los procesos soliciten y hagan la busqueda de su espacio.
+
     //1:Paginacipn  2:Segmentacion
     if(tipo==1) {isSEGMENTATION=0;}
     else if (tipo==2){isSEGMENTATION=1;}
@@ -348,15 +406,18 @@ int main(int argc, char *argv[])
     ready = createQueue();
     finished = createQueue();
     dead = createQueue();
+    enMemory = createQueue();
 
     vaciarMemoria();  //ESTO SOLO CUANDO EL PROGRAMADOR LO NECESITA
 
     pthread_create (&hiloCreador, NULL, generarDatos, NULL);
     pthread_create (&hiloBuscador, NULL, buscarProcesosEnReady, NULL);
+    pthread_create (&hiloEjecucion, NULL, ejecucionMemoria, NULL);
 
     pthread_join(hiloCreador, NULL);//Para que el main espere hasta que el creadorProcesos acabe y no se termine el programa.
     pthread_join(hiloBuscador, NULL);
-
+    pthread_join(hiloEjecucion, NULL);
+    
     printf("\n\tSTATUS: El creador de proceso se ha detenido.\n");
     return 0;
 
