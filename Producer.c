@@ -306,6 +306,10 @@ void firstFitSegmentacion(Process *process){
             //Agrega el proceso a los muertos.
             printf("\t\nPROCESO DENEGADO.\n");                                        //success = 0
             addToBinnacle(process, "\n%i\t\tMemory  allocation\tAllocation\t\t%s\t\t%i\t\t\t\t\t%i", 0, 1);
+             //Agregar el proceso muerto al archivo para verlo desde el espia 
+            addToDeads(process->PID);
+            //cuando el proceso muere se escribe 0 en el archivo que ve el espia
+            addToSearch(0);
             break;
         }
     }
@@ -314,6 +318,10 @@ void firstFitSegmentacion(Process *process){
         process->state=1;
         enqueue(process,enMemory);
         addToBinnacle(process, "\n%i\t\tDenying allocation\tAllocation\t\t%s\t\t%i\t\t\t\t\t%i", 1, 1);
+        //Agregar el proceso terminado al archivo para verlo desde el espia 
+        addToFinished(process->PID);
+        //0 en el archivo de search significa que no hay proceso buscando 
+        addToSearch(0);
         printProcess();
     } 
    
@@ -364,12 +372,19 @@ void firstFitPagination(Process *process){
         process->state=1;
         enqueue(process,enMemory); 
         addToBinnacle(process, "\n%i\t\tMemory  allocation\tAllocation\t\t%s\t\t%i\t\t\t\t\t%i", 1, 0);
+        
+        //Agregar el proceso terminado al archivo para verlo desde el espia 
+        addToFinished(process->PID);
+        addToSearch(0);
         printProcess();
     }
     else{
                                                                                      //success = 0
         addToBinnacle(process, "\n%i\t\tDenying allocation\tAllocation\t\t%s\t\t%i\t\t\t\t\t%i", 0, 0);
-        //PROCESO MUERE 
+        //PROCESO MUERE
+        //Agregar el proceso muerto al archivo para verlo desde el espia 
+        addToDeads(process->PID); 
+        addToSearch(0); 
     }
     
 }
@@ -399,6 +414,8 @@ void *buscarProcesosEnReady(){
         if (ready->length>0){
             Node *nodo = dequeue(ready);
             Process *process = nodo->process;
+            //El proceso que sale del ready a buscar memoria se agrega al archivo para ser consultado por el espia
+            addToSearch(process->PID);
             firstFit(process);
         }
     }
@@ -447,6 +464,11 @@ int main(int argc, char *argv[])
     dead = createQueue();
     enMemory = createQueue();
 
+    cleanFile("Finished_process.txt");
+
+    cleanFile("Block_process.txt");
+
+    cleanFile("Dead_process.txt");
 
     //-------------------------------------------------------------------------------------------------------------------------
     key_t semaphoreKey = getKey(semaphoreInt);

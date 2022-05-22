@@ -100,6 +100,54 @@ void addToBinnacle(Process *process, char* mensaje, int success, int isSegmentat
     fclose(file);
 
 }
+void addToDeads(int PID){
+	/**
+	 * @yosuabd Escribe el proceso que murio 
+	 * 
+	 * 
+	 */
+	FILE* file;     
+	file = openFile("Dead_process.txt","a+");
+	fprintf (file, "%d\n",PID); 
+    fclose(file);
+}
+
+void addToFinished(int PID){
+	/**
+	 * @yosuabd Escribe el proceso que termino 
+	 * 
+	 * 
+	 */
+	FILE* file;     
+	file = openFile("Finished_process.txt","a+");
+	fprintf (file, "%d\n",PID); 
+    fclose(file);
+}
+void addToSearch(int PID){
+	/**
+	 * @yosuabd Escribe el proceso que termino 
+	 * 
+	 * 
+	 */
+
+	FILE* file;     
+	file = openFile("Search_process.txt","a+");
+	fprintf (file, "%d\n",PID); 
+    fclose(file);
+}
+
+void cleanFile(const char* filename){
+	/**
+	 * @yosuabd Escribe el proceso que termino 
+	 * 
+	 * 
+	 */
+
+	FILE* file;     
+	file = openFile(filename,"w");
+	fprintf (file, "%s", " "); 
+    fclose(file);
+}
 
 
 //-----------------------FUNCIONES DE MEMORIA--------------------------//
