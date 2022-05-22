@@ -43,9 +43,21 @@ void prepareMemory(int n, Process* Memory){
 
 
 int main(){
+    /* 
+    PARA VER SEGMENTOS EN MEMORIA
+    >> ipcs -a
+    PARA BORAR SEGMENTOS EN MEMORIA, SHMID SEGUN CORRESPONDA
+    >> ipcrm -m shmid
+
+    PARA COMPILAR
+    gcc Initializer.c -o p1
+    PARA EJECUTAR
+    ./p1
+    */
+
 
     //Obtener la llave asociada al numero
-    key_t memoryKey = getKey(100);
+    key_t memoryKey = getKey(memoryProcessInt);
     int tamannio = 20;
     //Obtener el id de la memoria segun clave
     int memoryId = createMemory(memoryKey,tamannio);
@@ -63,17 +75,6 @@ int main(){
     //Liberar memoria.
 	shmdt ((char *)memory);
 
-    /* 
-    PARA VER SEGMENTOS EN MEMORIA
-    >> ipcs -a
-    PARA BORAR SEGMENTOS EN MEMORIA, SHMID SEGUN CORRESPONDA
-    >> ipcrm -m shmid
 
-    PARA COMPILAR
-    gcc Initializer.c -o p1
-    PARA EJECUTAR
-    ./p1
-    
-    */
     
 }

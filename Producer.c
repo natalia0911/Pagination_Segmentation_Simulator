@@ -5,7 +5,6 @@
 #include <pthread.h>
 #include <unistd.h>
 #include "SharedFunctions.c"
-#include <semaphore.h>
 #include "Queue.c"
 
 //Constantes a utilizar
@@ -40,6 +39,45 @@ Queue *finished;
 Queue *dead;
 
 
+#if defined(__GNU_LIBRARY__) && !defined(_SEM_SEMUN_UNDEFINED)
+// union ya definida en sys/sem.h
+#else
+union semun { 
+	int val;
+	struct semid_ds *buf;
+	unsigned short int *array;
+	struct seminfo *__buf;
+};
+#endif
+
+//Variables para los semaforos#####
+int semaphoreId;
+struct sembuf Operation;
+struct sembuf OFinalice;
+union semun arg;
+int goAhead = 1;
+
+//Funciones del semaforo
+void wait(){
+	Operation.sem_op = -1;
+	semop (semaphoreId, &Operation, 1);
+}
+
+void signal(){
+	Operation.sem_op = 1;
+	semop (semaphoreId, &Operation, 1);
+}
+
+void * checkStop(){
+    /**
+     * @brief Si el finalizador usa el semaforo para finalizar, 
+     * se dejan de crear procesos.
+     */
+	semop (semaphoreId, &OFinalice, 1);
+	goAhead = 0;
+	exit(0);
+
+}
 
 
 void *generarDatos(){
@@ -335,6 +373,7 @@ int main(int argc, char *argv[])
     else if (tipo==2){isSEGMENTATION=1;}
     else{printf("ERROR: Debe ingresar un modo de simulación válido (1-2).\n"); return 0;}
 
+    //-------------------------------------------------------------------------------------------------------------------------
     //Obtener la llave de la memoria
     key_t memoryKey = getKey(100);
     tamannio = getSize();
@@ -348,7 +387,24 @@ int main(int argc, char *argv[])
     ready = createQueue();
     finished = createQueue();
     dead = createQueue();
+    
+    //-------------------------------------------------------------------------------------------------------------------------
 
+    key_t semaphoreKey = getKey(semaphoreInt);
+	semaphoreId = createSemaphore(semaphoreKey);
+	
+	arg.val = 1;
+	semctl (semaphoreId, 0, SETVAL, 1); // 0 es e indice del semaforo, el 1 es semaforo disponible
+
+	Operation.sem_num = 0;
+	Operation.sem_op = 1;
+	Operation.sem_flg = 0;
+
+	OFinalice.sem_num = 1;
+	OFinalice.sem_op = -2;	
+	OFinalice.sem_flg = 0;
+
+    //-------------------------------------------------------------------------------------------------------------------------
     vaciarMemoria();  //ESTO SOLO CUANDO EL PROGRAMADOR LO NECESITA
 
     pthread_create (&hiloCreador, NULL, generarDatos, NULL);

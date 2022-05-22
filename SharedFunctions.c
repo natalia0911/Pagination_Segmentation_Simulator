@@ -3,11 +3,15 @@
 #include <string.h>
 #include <sys/shm.h>
 #include <sys/ipc.h>
+#include <sys/sem.h>
 #include <sys/types.h>
 #include <time.h>
 #include <assert.h> 
 #include "Process.c"
+
 #define IPC_RESULT_ERROR (-1)
+const int memoryProcessInt= 100;
+const int semaphoreInt = 500;
 
 //-----------------------FUNCIONES DE TIEMPO--------------------------//
 
@@ -122,7 +126,8 @@ key_t getKey(int IDMem){
 int createMemory(key_t key, int tamannio){
     /**
      * @brief Crea la memoria compartida y el espacio para esta
-     * segun la key asociada
+     * segun la key asociada.
+	 * 0777 - Permisos para leer, escribir y ejecutar.
      */
 	int IdMemoria = shmget (key, sizeof(Process)*tamannio, 0777 | IPC_CREAT);
 	if (IdMemoria == IPC_RESULT_ERROR)
@@ -150,4 +155,21 @@ Process* getMemory(int IdMem){
 }
 
 
+
+int createSemaphore(key_t semaphoreKey){
+	/**
+     * @brief Crea la memoria compartida y el espacio para esta
+     * segun la key asociada, pero en este caso es para un semaforo
+	 * 0600 - Permisos de lectura y escritura para el propietario y ninguna 
+	 * para el resto.
+     */
+	//Crea el espacio para el semaforo
+	int IdSemaphore = semget (semaphoreKey, 10, 0600 | IPC_CREAT);	
+	if (IdSemaphore == IPC_RESULT_ERROR)
+	{
+		printf("Error trying to get the Id!\n");
+		exit(0);
+	}
+    return IdSemaphore;
+}
 
