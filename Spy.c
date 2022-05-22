@@ -21,8 +21,7 @@
 Process *memory;
 //Tamaño de la memoria
 int tamannio;
-//Bandera para proceso en ejecucion para solo mostrar una vez
-int exe = 0;
+
 
 void executionProcess(){
     printf("Proceso en ejecucion:\n");
@@ -32,10 +31,9 @@ void executionProcess(){
     *Cuendo se saquen los procesos ya se mostrada el proceso real en ejecucion 
     */ 
     for (int i=0; i<tamannio; i++){
-        if (memory[i].state == 1 && exe == 0)
+        if (memory[i].state == 1 )
         {
-            printf("PID: %d\n",memory[i].PID);
-            exe=1;
+            printf("PID: %d en la pagina: %d \n",memory[i].PID, i);
         }
 	}
 }
