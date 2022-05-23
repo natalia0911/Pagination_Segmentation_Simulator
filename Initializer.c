@@ -27,7 +27,7 @@ void initializeBinnacle(){
 	 */
 	FILE *file;     
 	file = openFile("binnacle.txt","w");
-	fprintf (file, "%s","PID\t\tAction\t\t\t\tType\t\t\tTime\t\t\t\t\t\tAllocated space\t\t\tEntered");
+	fprintf (file, "%s","PID\t\tAction\t\t\t\t\tType\t\t\t\tTime\t\t\t\t\t\tAllocated space\t\t\tEntered");
     fclose(file);
 }
 
