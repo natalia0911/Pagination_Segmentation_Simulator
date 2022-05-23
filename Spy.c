@@ -22,6 +22,37 @@ Process *memory;
 //Tamaño de la memoria
 int tamannio;
 
+#if defined(__GNU_LIBRARY__) && !defined(_SEM_SEMUN_UNDEFINED)
+// union ya definida en sys/sem.h
+#else
+union semun { 
+	int val;
+	struct semid_ds *buf;
+	unsigned short int *array;
+	struct seminfo *__buf;
+};
+#endif
+
+//Variables para los semaforos
+int semaphoreId;
+struct sembuf Operation;
+struct sembuf OFinalice;
+union semun arg;
+int goAhead = 1;
+
+//Funciones del semaforo
+void wait(){
+    //printf("En wait...\n");
+	Operation.sem_op = -1;
+	semop (semaphoreId, &Operation, 1);
+}
+
+void signal(){
+    //printf("Signal...\n");
+	Operation.sem_op = 1;
+	semop (semaphoreId, &Operation, 1);
+}
+
 
 void executionProcess(){
     printf("Proceso en ejecucion:\n");
@@ -114,6 +145,7 @@ int main(int argc, char const *argv[])
     //Obtener la memoria con shmat
     memory = getMemory(memoryId);
 
+
     //Selecciona el tipo 
     int stateType = atoi(argv[1]);
 
@@ -130,6 +162,21 @@ int main(int argc, char const *argv[])
         printf("1 para mostrar estado de procesos\n");
         printf("0 para mostrar estado de memoria\n");
     }
+
+    //-------------------------------------------------------------------------------------------------------------------------
+    key_t semaphoreKey = getKey(semaphoreInt);
+	semaphoreId = createSemaphore(semaphoreKey);
+	
+	arg.val = 1;
+	semctl (semaphoreId, 0, SETVAL, 1); // 0 es e indice del semaforo, el 1 es semaforo disponible
+
+	Operation.sem_num = 0;
+	Operation.sem_op = 1;
+	Operation.sem_flg = 0;
+
+	OFinalice.sem_num = 1;
+	OFinalice.sem_op = -2;	
+	OFinalice.sem_flg = 0;
 
     return 0;
 }
