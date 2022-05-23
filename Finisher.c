@@ -4,6 +4,11 @@
 #include <stdlib.h>
 #include "SharedFunctions.c"
 
+//Proceso como referencia a la memoria compartida
+Process *memory;
+//Tamaño de la memoria
+int tamannio;
+
 #if defined(__GNU_LIBRARY__) && !defined(_SEM_SEMUN_UNDEFINED)
 // union ya definida en sys/sem.h
 #else
@@ -18,11 +23,17 @@ union semun {
 //Variables para los semaforos
 int semaphoreId;
 struct sembuf Operation;
+struct sembuf OFinalice;
 
 
 
 int main (){
-
+    /*
+    Compilacion
+    gcc Finisher.c -o p4  
+    Ejecutar
+    ./p4 
+    */
     //---------------------------------------------------------
     //Obtener la llave de la memoria
     key_t memoryKey = getKey(memoryProcessInt);
@@ -37,6 +48,16 @@ int main (){
     Operation.sem_num = 1;
     Operation.sem_op = 2;
     Operation.sem_flg = 0;
+
+    //---------------------------------------------------------
+    //semop (semaphoreId, &Operation, 1);
+    semop (semaphoreId, &OFinalice, 1);
+    //Libera la Memoria compartida
+	shmctl (memoryId, IPC_RMID, (struct shmid_ds *)NULL);
+
+	FILE* fichero; 
+	fichero = openFile("binnacle.txt","a+");
+	fclose(fichero);
 
     return 0;
 

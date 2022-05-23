@@ -399,7 +399,7 @@ void *buscarProcesosEnReady(){
      */
     pthread_t hiloAsignacion;
     
-    while(1){
+    while(1 && goAhead){
         //Mientras haya algo en la cola del ready
         if (ready->length>0){
             if (isSEGMENTATION==0){

@@ -72,7 +72,7 @@ int main(){
     //No se si sea necesario, pero era para probar acceso a memoria
     prepareMemory(tamannio,memory);
     printf("Size of process %lu \n", sizeof(Process));
-    //Liberar memoria.
+    //separa la memoria compartida en la direccion especificada 
 	shmdt ((char *)memory);
 
 
