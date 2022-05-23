@@ -16,8 +16,8 @@
 #define MAXBURST 60
 #define MINBURST 20
 
-#define MAXTIME 60
-#define MINTIME 30
+#define MAXTIME 6
+#define MINTIME 3
 
 #define MICROSECONDOS 1000000
 
@@ -85,6 +85,29 @@ void * checkStop(){
 
 
 
+void saveBlockProcess(){
+    /**
+     * @yosuabd Funcion que toma el contenido del ready y lo  
+     * guarda en un archivo para el espia
+     */
+    wait();
+    if (ready->length>0)
+    {
+        cleanFile("Block_process.txt");
+        Node *temp = ready->first;
+        
+        while(temp!=NULL){
+            addToBlock(temp->process->PID);
+            temp = temp->next;
+        }
+    }
+    else{
+        cleanFile("Block_process.txt");
+        addToBlock(0);
+    }
+    signal();
+    
+}
 
 void printProcess(){
 	for (int i=0; i<tamannio; i++)
@@ -99,6 +122,10 @@ void sacarProceso(int PID){
      * 
      */
     wait();
+
+    //Se escribe el proceso que se quiere sacar
+    //en el archivo para verlo en el espia
+    addToFinished(PID);
     for (int i=0; i<tamannio; i++){
         if (memory[i].state == 1 && memory[i].PID==PID){
             memory[i].state = 0;
@@ -152,6 +179,10 @@ void *generarDatos(){
 
         //AGREGA EL PROCESO
         enqueue (process, ready);
+
+        
+        saveBlockProcess();
+
         //printQueue(ready, isSEGMENTATION);
 
         //ESPERA ENTRE minEspera A maxEspera
@@ -188,14 +219,22 @@ void *firstFitSegmentacion(){
     wait();//semaforo para sincronizar la salida de los procesos.
     Node *nodo = dequeue(ready);
     signal();
+
+    saveBlockProcess();
     if(nodo==NULL) return NULL;
     Process *process = nodo->process;
 
     short PID = process->PID;
     short burst = process->burst;
     short cantSegmentos = process->seg->cantidad;
-    //El proceso que sale del ready a buscar memoria se agrega al archivo para ser consultado por el espia
-    addToSearch(PID);
+
+    //Inserta el PID actual que este buscando
+    // y el ultimo que se puso a buscar o 0 si no hay ultimo. 
+    //El 0 es para denotar que no hay nadie buscando
+    wait();
+    addToSearch(process->PID, 0);
+    signal();
+
     printf("Cantidad de segs %i del PID %d con burst %d\n",cantSegmentos,PID,burst);
 
     printf("EspSeg1: %i \t",process->seg->espaciosSeg1);
@@ -267,11 +306,20 @@ void *firstFitSegmentacion(){
         if(k==tamannio){
             //Agrega el proceso a los muertos.
             printf("\t\nPROCESO DENEGADO.\n");
+            wait();
             addToBinnacle(process, "\n%i\t\tDenying allocation  \tAllocation  \t\t%s\t\t%i\t\t\t\t\t%i", 0, 1);
+            signal();
             //Agregar el proceso muerto al archivo para verlo desde el espia 
+            wait();
             addToDeads(process->PID);
-            //cuando el proceso muere se escribe 0 en el archivo que ve el espia
-            addToSearch(0);
+            signal();
+            //Inserta el PID actual que este buscando
+            // y el ultimo que se puso a buscar o 0 si no hay ultimo. 
+            //El 0 es para denotar que no hay nadie buscando
+            wait();
+            cleanFile("Search_process.txt");
+            addToSearch(0, process->PID);
+            signal();
             break;
         } 
     }
@@ -280,20 +328,32 @@ void *firstFitSegmentacion(){
         printf("\t\nPROCESO ASIGNADO.\n");
         //process->state=1;
         //(process,enMemory); //Listo para ejecutar
+        wait();
         addToBinnacle(process, "\n%i\t\tMemory  allocation  \tAllocation  \t\t%s\t\t%i\t\t\t\t\t%i", 1, 1);
-        //0 en el archivo de search significa que no hay proceso buscando 
-        addToSearch(0);
+        signal();
+
+        //Inserta el PID actual que este buscando
+        // y el ultimo que se puso a buscar o 0 si no hay ultimo. 
+        //El 0 es para denotar que no hay nadie buscando
+        wait();
+        cleanFile("Search_process.txt");
+        addToSearch(0, process->PID);
+        signal();
+        
         printProcess();
         sleep(process->burst);//Realiza el sleep de ese proceso.
         sacarProceso(process->PID);
+        
+        wait();
         addToBinnacle(process, "\n%i\t\tMemory  deallocation\tDeallocation\t\t%s\t\t%i\t\t\t\t\t%i", 1, 1);
+        signal();
+
         printf("Borrado...\n");
         printf("\t..................................................\n");
         printProcess();
         printf("\t..................................................\n");
         printf("Proceso Terminado: %d\n",process->PID);
-        //Agregar el proceso terminado al archivo para verlo desde el espia 
-        addToFinished(process->PID);
+
     }
     
 }
@@ -306,14 +366,21 @@ void *firstFitPagination(){
     wait();
     Node *nodo = dequeue(ready);
     signal();
+    saveBlockProcess();
     if(nodo==NULL) return NULL;
     Process *process = nodo->process;
 
     short PID = process->PID;
     short burst = process->burst;
     short cantPaginas = process->cantPaginas;
-    //El proceso que sale del ready a buscar memoria se agrega al archivo para ser consultado por el espia
-    addToSearch(PID);
+    //Inserta el PID actual que este buscando
+    // y el ultimo que se puso a buscar o 0 si no hay ultimo. 
+    //El 0 es para denotar que no hay nadie buscando
+    wait();
+    cleanFile("Search_process.txt");
+    addToSearch(process->PID, 0);
+    signal();
+
     printf("Cantidad de pags %i \n",cantPaginas);
     //Variable para saber si hay la cantidad necesaria de paginas 
     //que requiere el proceso
@@ -356,24 +423,42 @@ void *firstFitPagination(){
         printf("\t\nPROCESO ASIGNADO.\n");
         //process->state=1;
         //enqueue(process,enMemory); 
+        wait();
         addToBinnacle(process, "\n%i\t\tMemory  allocation  \tAllocation  \t\t%s\t\t%i\t\t\t\t\t%i", 1, 0);
-        
-        addToSearch(0);
+        signal();
+        //Inserta el PID actual que este buscando
+        // y el ultimo que se puso a buscar o 0 si no hay ultimo. 
+        //El 0 es para denotar que no hay nadie buscando
+        wait();
+        cleanFile("Search_process.txt");
+        addToSearch(0, process->PID);
+        signal();
+
         printProcess();
         //0 en el archivo de search significa que no hay proceso buscando 
         sleep(process->burst);//Realiza el sleep de ese proceso.
         sacarProceso(process->PID);
+        
+        wait();
         addToBinnacle(process, "\n%i\t\tMemory  deallocation\tDeallocation\t\t%s\t\t%i\t\t\t\t\t%i", 1, 0);
-        //Agregar el proceso terminado al archivo para verlo desde el espia 
-        addToFinished(process->PID);
+        signal();
     }
     else{
-                                                                                     //success = 0
+        wait();                                                                             //success = 0
         addToBinnacle(process, "\n%i\t\tDenying allocation\tAllocation\t\t%s\t\t%i\t\t\t\t\t%i", 0, 0);
+        signal();
         //PROCESO MUERE
-        //Agregar el proceso muerto al archivo para verlo desde el espia 
+        //Agregar el proceso muerto al archivo para verlo desde el espia
+        wait();  
         addToDeads(process->PID); 
-        addToSearch(0); 
+        signal();
+        //Inserta el PID actual que este buscando
+        // y el ultimo que se puso a buscar o 0 si no hay ultimo. 
+        //El 0 es para denotar que no hay nadie buscando
+        wait(); 
+        cleanFile("Search_process.txt");
+        addToSearch(0, process->PID);
+        signal();
     }
     
 }
@@ -412,6 +497,7 @@ void *buscarProcesosEnReady(){
     }
  
 }
+
 
 
 int main(int argc, char *argv[]) 
@@ -455,11 +541,7 @@ int main(int argc, char *argv[])
     dead = createQueue();
     //enMemory = createQueue();
 
-    cleanFile("Finished_process.txt");
-
-    cleanFile("Block_process.txt");
-
-    cleanFile("Dead_process.txt");
+    
 
     //-------------------------------------------------------------------------------------------------------------------------
     key_t semaphoreKey = getKey(semaphoreInt);
@@ -478,6 +560,12 @@ int main(int argc, char *argv[])
 
     //-------------------------------------------------------------------------------------------------------------------------
     vaciarMemoria();  //ESTO SOLO CUANDO EL PROGRAMADOR LO NECESITA
+    
+    cleanFile("Finished_process.txt");
+
+    cleanFile("Block_process.txt");
+
+    cleanFile("Dead_process.txt");
 
     pthread_create (&hiloCreador, NULL, generarDatos, NULL);
     pthread_create (&hiloBuscador, NULL, buscarProcesosEnReady, NULL);

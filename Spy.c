@@ -55,7 +55,7 @@ void signal(){
 
 
 void executionProcess(){
-    printf("Proceso en ejecucion:\n");
+    printf("Procesos en ejecucion:\n");
 
     /*Entra en la memoria compartida y muestra el proceso en ejecucion
     *Como los procesos no salen le la memoria siempre muesta el PID 1 
@@ -64,7 +64,7 @@ void executionProcess(){
     for (int i=0; i<tamannio; i++){
         if (memory[i].state == 1 )
         {
-            printf("PID: %d en la pagina: %d \n",memory[i].PID, i);
+            printf("\tPID: %d en la pagina: %d \n",memory[i].PID, i);
         }
 	}
 }
@@ -77,7 +77,7 @@ void readFile(const char* filename){
     char *contents = NULL;
     size_t len = 0;
     while (getline(&contents, &len, input_file) != -1){
-        printf("PID: %s", contents);
+        printf("\tPID: %s", contents);
     }
 
     fclose(input_file);
@@ -90,7 +90,8 @@ void blockProcess(){
 }
 
 void searchProcess(){
-    printf("\nProceso en busqueda:\n");
+    printf("\nProceso en busqueda:");
+    printf("\t[Nota]:Se muestran dos PID's (1) ultimo en buscar (2) actual \n");
     readFile("Search_process.txt");
 }
 
@@ -105,22 +106,38 @@ void finishedProcess(){
 }
 
 void showProcessState(){
-    
+    printf("[Nota]: PID: 0 denota que no hay proceso\n");
+    wait();
     executionProcess();
+    signal();
+    
+    wait();
     blockProcess();
+    signal();
+    
+    wait();
     searchProcess();
+    signal();
+
+    wait();
     deadProcess();
+    signal();
+    
+    wait();
     finishedProcess();
+    signal();
 }
 
 
 void showMemoryState(){
     
     printf("#pagina\tProceso\n");
-
+    wait();
 	for (int i=0; i<tamannio; i++){
         printf("   %d\t%d\n", i,memory[i].PID);
 	}
+    signal();
+
 }
 
 int main(int argc, char const *argv[])
@@ -149,11 +166,11 @@ int main(int argc, char const *argv[])
     //Selecciona el tipo 
     int stateType = atoi(argv[1]);
 
-    if (stateType == SHOWPROCESS){
+    if (stateType == SHOWPROCESS){ // 1 procesos
 
         showProcessState();
     
-    }else if(stateType == SHOWMEMORY){ // Memory
+    }else if(stateType == SHOWMEMORY){ // 0 memoria
         
         showMemoryState();
     

@@ -123,7 +123,7 @@ void addToFinished(int PID){
 	fprintf (file, "%d\n",PID); 
     fclose(file);
 }
-void addToSearch(int PID){
+void addToSearch(int actual_PID, int last_PID){
 	/**
 	 * @yosuabd Escribe el proceso que termino 
 	 * 
@@ -131,7 +131,19 @@ void addToSearch(int PID){
 	 */
 
 	FILE* file;     
-	file = openFile("Search_process.txt","a+");
+	file = openFile("Search_process.txt","w");
+	fprintf (file, "(1) %d\n(2) %d",last_PID,actual_PID); 
+    fclose(file);
+}
+void addToBlock(int PID){
+	/**
+	 * @yosuabd Escribe el proceso que termino 
+	 * 
+	 * 
+	 */
+
+	FILE* file;     
+	file = openFile("Block_process.txt","a+");
 	fprintf (file, "%d\n",PID); 
     fclose(file);
 }
