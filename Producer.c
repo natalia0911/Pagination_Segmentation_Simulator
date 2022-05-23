@@ -16,8 +16,8 @@
 #define MAXBURST 60
 #define MINBURST 20
 
-#define MAXTIME 6
-#define MINTIME 3
+#define MAXTIME 60
+#define MINTIME 30
 
 #define MICROSECONDOS 1000000
 
@@ -61,13 +61,13 @@ int goAhead = 1;
 
 //Funciones del semaforo
 void wait(){
-    printf("En wait...\n");
+    //printf("En wait...\n");
 	Operation.sem_op = -1;
 	semop (semaphoreId, &Operation, 1);
 }
 
 void signal(){
-    printf("Signal...\n");
+    //printf("Signal...\n");
 	Operation.sem_op = 1;
 	semop (semaphoreId, &Operation, 1);
 }
@@ -94,7 +94,11 @@ void printProcess(){
 }
 
 void sacarProceso(int PID){
-    //printf("\n\t\tEliminando el proceso: %d\n\n",PID);
+    /**
+     * @brief Liberar un espacio de memoria, donde se encuentre el proceso indicado
+     * 
+     */
+    wait();
     for (int i=0; i<tamannio; i++){
         if (memory[i].state == 1 && memory[i].PID==PID){
             memory[i].state = 0;
@@ -104,6 +108,7 @@ void sacarProceso(int PID){
             memory[i].seg = NULL;
         }
 	}
+    signal();
 }
 
 void *ejecucionMemoria(){
@@ -192,7 +197,7 @@ void *generarDatos(){
 
         //ESPERA ENTRE minEspera A maxEspera
         espera = random() % ((MAXTIME) - (MINTIME)+1) + (MINTIME);
-        //printf("STATUS: Esperando %d segundos.\n", espera);
+        printf("STATUS: Esperando %d segundos.\n", espera);
         usleep (espera*MICROSECONDOS);//Usa la variable para pausar el hilo.
             
     }
@@ -203,6 +208,7 @@ void vaciarMemoria(){
     /**
      * @brief Funcion para ver inicializar o vaciar TODA la memoria compartida (Uso del programador)
      */
+    wait();
 	for (int i=0; i<tamannio; i++){
 		memory[i].state = 0;
         memory[i].PID = 0;
@@ -210,6 +216,7 @@ void vaciarMemoria(){
         memory[i].cantPaginas=0;
         memory[i].seg = NULL;
 	}
+    signal();
 }
 
 
@@ -218,8 +225,9 @@ void liberarMemoria(int PID){
      * @brief Liberar un espacio de memoria, donde se encuentre el proceso indicado
      * 
      */
+    wait();
 	for (int i=0; i<tamannio; i++){
-        if (memory[i].PID = PID){
+        if (memory[i].PID == PID){
             memory[i].state = 0;
             memory[i].PID = 0;
             memory[i].burst = 0;
@@ -227,10 +235,16 @@ void liberarMemoria(int PID){
             memory[i].seg = NULL;
         }
 	}
+    signal();
 }
 
 
-void firstFitSegmentacion(Process *process){
+void *firstFitSegmentacion(){
+    wait();//semaforo para sincronizar la salida de los procesos.
+    Node *nodo = dequeue(ready);
+    signal();
+    if(nodo==NULL) return NULL;
+    Process *process = nodo->process;
     /**
      * @brief Algoritmo de asignacion de memoria para procesos segmentados
      * 
@@ -240,7 +254,7 @@ void firstFitSegmentacion(Process *process){
     short cantSegmentos = process->seg->cantidad;
     //El proceso que sale del ready a buscar memoria se agrega al archivo para ser consultado por el espia
     addToSearch(PID);
-    printf("Cantidad de segs %i del PID %d \n",cantSegmentos,PID);
+    printf("Cantidad de segs %i del PID %d con burst %d\n",cantSegmentos,PID,burst);
 
     printf("EspSeg1: %i \t",process->seg->espaciosSeg1);
     printf("EspSeg2: %i \t",process->seg->espaciosSeg2);
@@ -280,11 +294,9 @@ void firstFitSegmentacion(Process *process){
                                 memory[p].cantPaginas=0;
                                 memory[p].seg = NULL;
                             }
-                            
                         }
                         break;
                     }
-                    
                     //Si está vacio para ese espacio lo coloca.
                     if (memory[k+e].state == 0){
                         //printf("Agrega Temporal\n");
@@ -312,33 +324,43 @@ void firstFitSegmentacion(Process *process){
         //Si salió y k es igual al tamaño significa que no encontró campo para ese segmento.
         if(k==tamannio){
             //Agrega el proceso a los muertos.
-            printf("\t\nPROCESO DENEGADO.\n");                                        //success = 0
-            addToBinnacle(process, "\n%i\t\tMemory  allocation\tAllocation\t\t%s\t\t%i\t\t\t\t\t%i", 0, 1);
-             //Agregar el proceso muerto al archivo para verlo desde el espia 
+            printf("\t\nPROCESO DENEGADO.\n");
+            addToBinnacle(process, "\n%i\t\tDenying allocation\tAllocation\t\t%s\t\t%i\t\t\t\t\t%i", 1, 1);
+            //Agregar el proceso muerto al archivo para verlo desde el espia 
             addToDeads(process->PID);
             //cuando el proceso muere se escribe 0 en el archivo que ve el espia
             addToSearch(0);
             break;
-        }
-        //Da el paso para accesar memoria
-        signal();
+        } 
     }
+    signal();//Da el paso para accesar memoria 
     if(i==cantSegmentos){
         printf("\t\nPROCESO ASIGNADO.\n");
-        process->state=1;
-        enqueue(process,enMemory); //Listo para ejecutar
-        addToBinnacle(process, "\n%i\t\tDenying allocation\tAllocation\t\t%s\t\t%i\t\t\t\t\t%i", 1, 1);
-        //Agregar el proceso terminado al archivo para verlo desde el espia 
-        addToFinished(process->PID);
+        //process->state=1;
+        //(process,enMemory); //Listo para ejecutar
+        addToBinnacle(process, "\n%i\t\tMemory  allocation\tAllocation\t\t%s\t\t%i\t\t\t\t\t%i", 0, 1);
         //0 en el archivo de search significa que no hay proceso buscando 
         addToSearch(0);
         printProcess();
-    } 
-   
-
+        sleep(process->burst);//Realiza el sleep de ese proceso.
+        sacarProceso(process->PID);
+        printf("Borrado...\n");
+        printf("\t..................................................\n");
+        printProcess();
+        printf("\t..................................................\n");
+        printf("Proceso Terminado: %d\n",process->PID);
+        //Agregar el proceso terminado al archivo para verlo desde el espia 
+        addToFinished(process->PID);
+    }
+    
 }
 
-void firstFitPagination(Process *process){
+void *firstFitPagination(){
+    wait();
+    Node *nodo = dequeue(ready);
+    signal();
+    if(nodo==NULL) return NULL;
+    Process *process = nodo->process;
     /**
      * @brief Algoritmo de asignacion de memoria para procesos paginados
      * 
@@ -352,12 +374,14 @@ void firstFitPagination(Process *process){
     //Variable para saber si hay la cantidad necesaria de paginas 
     //que requiere el proceso
     short enoughSpace = 0;
+    wait();
    	for (int i=0; i<tamannio; i++){
         if (memory[i].state == 0){
             if (enoughSpace==cantPaginas){break;}
             else{enoughSpace = enoughSpace+1;}
         }
 	}
+    signal();
     //Variable para contar las paginas del proceso que ya ha asignado en memoria
     //Cuando es igual a cantPaginas, deja de asignar y se sale del ciclo
     //Si entra a este ciclo asigna la memoria, de lo contrario no habia espacio
@@ -380,21 +404,23 @@ void firstFitPagination(Process *process){
                 else{
                     break;
                 }
-            }
-                
+            }   
         }
         //Da el paso para accesar memoria
         signal();
 
         printf("\t\nPROCESO ASIGNADO.\n");
-        process->state=1;
-        enqueue(process,enMemory); 
+        //process->state=1;
+        //enqueue(process,enMemory); 
         addToBinnacle(process, "\n%i\t\tMemory  allocation\tAllocation\t\t%s\t\t%i\t\t\t\t\t%i", 1, 0);
         
-        //Agregar el proceso terminado al archivo para verlo desde el espia 
-        addToFinished(process->PID);
         addToSearch(0);
         printProcess();
+        //0 en el archivo de search significa que no hay proceso buscando 
+        sleep(process->burst);//Realiza el sleep de ese proceso.
+        sacarProceso(process->PID);
+        //Agregar el proceso terminado al archivo para verlo desde el espia 
+        addToFinished(process->PID);
     }
     else{
                                                                                      //success = 0
@@ -426,13 +452,17 @@ void *buscarProcesosEnReady(){
      * @brief Funcion que ejecuta un hilo para verificar si hay algo en la cola del ready
      * para enviar a los procesos a colocarse en algun espacio libre.
      */
+    pthread_t hiloAsignacion;
     
     while(1){
         //Mientras haya algo en la cola del ready
         if (ready->length>0){
-            Node *nodo = dequeue(ready);
-            Process *process = nodo->process;
-            firstFit(process);
+            if (isSEGMENTATION==0){
+                pthread_create (&hiloAsignacion, NULL, firstFitPagination, NULL);
+            }
+            else{
+                pthread_create (&hiloAsignacion, NULL, firstFitSegmentacion, NULL);
+            }
         }
     }
  
@@ -457,7 +487,7 @@ int main(int argc, char *argv[])
 
     pthread_t hiloCreador;//Hilo para el proceso que crea los procesos.
     pthread_t hiloBuscador;//Hilo de la funcion que se encarga de que los procesos soliciten y hagan la busqueda de su espacio.
-    pthread_t hiloEjecucion;//Hilo de la funcion que se encarga de que los procesos soliciten y hagan la busqueda de su espacio.
+    //pthread_t hiloEjecucion;//Hilo de la funcion que se encarga de que los procesos soliciten y hagan la busqueda de su espacio.
 
     //1:Paginacipn  2:Segmentacion
     if(tipo==1) {isSEGMENTATION=0;}
@@ -478,7 +508,7 @@ int main(int argc, char *argv[])
     ready = createQueue();
     finished = createQueue();
     dead = createQueue();
-    enMemory = createQueue();
+    //enMemory = createQueue();
 
     cleanFile("Finished_process.txt");
 
@@ -506,11 +536,11 @@ int main(int argc, char *argv[])
 
     pthread_create (&hiloCreador, NULL, generarDatos, NULL);
     pthread_create (&hiloBuscador, NULL, buscarProcesosEnReady, NULL);
-    pthread_create (&hiloEjecucion, NULL, ejecucionMemoria, NULL);
+    //pthread_create (&hiloEjecucion, NULL, ejecucionMemoria, NULL);
 
     pthread_join(hiloCreador, NULL);//Para que el main espere hasta que el creadorProcesos acabe y no se termine el programa.
     pthread_join(hiloBuscador, NULL);
-    pthread_join(hiloEjecucion, NULL);
+    //pthread_join(hiloEjecucion, NULL);
     
     printf("\n\tSTATUS: El creador de proceso se ha detenido.\n");
     return 0;
