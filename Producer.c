@@ -484,7 +484,7 @@ void *buscarProcesosEnReady(){
      */
     pthread_t hiloAsignacion;
     
-    while(1){
+    while(1 && goAhead){
         //Mientras haya algo en la cola del ready
         if (ready->length>0){
             if (isSEGMENTATION==0){
@@ -527,11 +527,10 @@ int main(int argc, char *argv[])
 
     //-------------------------------------------------------------------------------------------------------------------------
     //Obtener la llave de la memoria
-    key_t memoryKey = getKey(100);
+    key_t memoryKey = getKey(memoryProcessInt);
     tamannio = getSize();
     //Obtener el id de la memoria segun clave
     int memoryId = createMemory(memoryKey,tamannio);
-    printf("Id de memoria: %i\n",memoryId);
     //Obtener la memoria con shmat
     memory = getMemory(memoryId);
 
