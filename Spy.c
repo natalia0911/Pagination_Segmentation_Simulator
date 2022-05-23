@@ -36,19 +36,16 @@ union semun {
 //Variables para los semaforos
 int semaphoreId;
 struct sembuf Operation;
-struct sembuf OFinalice;
 union semun arg;
-int goAhead = 1;
+
 
 //Funciones del semaforo
 void wait(){
-    //printf("En wait...\n");
 	Operation.sem_op = -1;
 	semop (semaphoreId, &Operation, 1);
 }
 
 void signal(){
-    //printf("Signal...\n");
 	Operation.sem_op = 1;
 	semop (semaphoreId, &Operation, 1);
 }
@@ -163,20 +160,12 @@ int main(int argc, char const *argv[])
         printf("0 para mostrar estado de memoria\n");
     }
 
-    //-------------------------------------------------------------------------------------------------------------------------
+    //---------------------------------------------------------------
     key_t semaphoreKey = getKey(semaphoreInt);
 	semaphoreId = createSemaphore(semaphoreKey);
-	
-	arg.val = 1;
-	semctl (semaphoreId, 0, SETVAL, 1); // 0 es e indice del semaforo, el 1 es semaforo disponible
+    Operation.sem_num = 0;
+    Operation.sem_flg = 0;
 
-	Operation.sem_num = 0;
-	Operation.sem_op = 1;
-	Operation.sem_flg = 0;
-
-	OFinalice.sem_num = 1;
-	OFinalice.sem_op = -2;	
-	OFinalice.sem_flg = 0;
 
     return 0;
 }
