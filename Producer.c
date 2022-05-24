@@ -90,7 +90,7 @@ void saveBlockProcess(){
      * @yosuabd Funcion que toma el contenido del ready y lo  
      * guarda en un archivo para el espia
      */
-    wait();
+    //wait();
     if (ready->length>0)
     {
         cleanFile("Block_process.txt");
@@ -105,7 +105,7 @@ void saveBlockProcess(){
         cleanFile("Block_process.txt");
         addToBlock(0);
     }
-    signal();
+    //signal();
     
 }
 
