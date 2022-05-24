@@ -23,7 +23,6 @@ union semun {
 //Variables para los semaforos
 int semaphoreId;
 struct sembuf Operation;
-struct sembuf OFinalice;
 
 
 
@@ -50,8 +49,7 @@ int main (){
     Operation.sem_flg = 0;
 
     //---------------------------------------------------------
-    //semop (semaphoreId, &Operation, 1);
-    semop (semaphoreId, &OFinalice, 1);
+    semop (semaphoreId, &Operation, 1);
     //Libera la Memoria compartida
 	shmctl (memoryId, IPC_RMID, (struct shmid_ds *)NULL);
 

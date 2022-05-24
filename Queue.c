@@ -57,7 +57,6 @@ void enqueue (Process *p, Queue *q){
 Node *dequeue (Queue *q){
 
     if (q->length==0){
-        printf("There is nothing in the queue!\n");
 		return NULL;
     }
     else{
@@ -76,33 +75,6 @@ Node *dequeue (Queue *q){
 
 }
 
-Node *deleteNode(Process *p,Queue *q){
-    //Dado un proceso retorna el nodo en el que se encuentra
-    Node* actual = q->first ;
-
-    if (actual->process == p){  
-        //El primero ahora es el segundo
-		q->first = q->first->next;
-        //Se desenlaza el nodo
-        //En este caso se necesita el puntero a next.
-        printf("Process deleted!\n");
-        q->length-=1;
-		return actual;
-    }
-    else{
-        while (actual->next->process != p){ 
-            actual = actual->next; 
-        }
-        //Nodo que ando buscando
-        Node *temp = actual->next;
-        actual->next = temp->next;
-        //temp->next = NULL;//Se necesita ese puntero para cuando cuando se saca de la cola que simula la memoria.
-        q->length-=1;
-        printf("Process deleted!\n");
-        return temp; 
-    }       
-
-}
 
 
 void printInfo(Queue *q, char *tipo){

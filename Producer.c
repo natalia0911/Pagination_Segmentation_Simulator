@@ -307,7 +307,7 @@ void *firstFitSegmentacion(){
             //Agrega el proceso a los muertos.
             printf("\t\nPROCESO DENEGADO.\n");
             wait();
-            addToBinnacle(process, "\n%i\t\tDenying allocation  \tAllocation  \t\t%s\t\t%i\t\t\t\t\t%i", 0, 1);
+            addToBinnacle(process, "\n%i\t\tDenying allocation  \t\tAllocation  \t\t%s\t\t%i\t\t\t\t\t%i", 0, 1);
             signal();
             //Agregar el proceso muerto al archivo para verlo desde el espia 
             wait();
@@ -483,8 +483,9 @@ void *buscarProcesosEnReady(){
      * para enviar a los procesos a colocarse en algun espacio libre.
      */
     pthread_t hiloAsignacion;
-    
-    while(1 && goAhead){
+    pthread_t stopThread;
+	pthread_create(&stopThread, NULL, checkStop, NULL);
+    while(goAhead){
         //Mientras haya algo en la cola del ready
         if (ready->length>0){
             if (isSEGMENTATION==0){
