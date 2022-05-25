@@ -58,7 +58,11 @@ int main(){
 
     //Obtener la llave asociada al numero
     key_t memoryKey = getKey(memoryProcessInt);
+    //Valor deafult del tamannio, Just in case
     int tamannio = 20;
+    //Pedir cantidad de espacios
+    printf("Digite la cantidad de espacios de memoria: ");
+    scanf("%d",&tamannio);
     //Obtener el id de la memoria segun clave
     int memoryId = createMemory(memoryKey,tamannio);
     printf("Id de memoria: %i\n",memoryId);

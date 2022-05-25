@@ -360,7 +360,7 @@ void *firstFitSegmentacion(){
             //Agrega el proceso a los muertos.
             printf("\t\nPROCESO DENEGADO.\n");
             waitFiles();
-            addToBinnacle(process, "\n%i\t\tDenying allocation  \t\tAllocation  \t\t%s\t\t%i\t\t\t\t\t%i", 0, 1);
+            addToBinnacle(process, "\n%i\t\tDenying allocation  \tAllocation  \t\t%s\t\t%i\t\t\t\t\t%i", 0, 1);
             signalFiles();
             //Agregar el proceso muerto al archivo para verlo desde el espia 
             waitFiles();
