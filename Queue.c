@@ -67,8 +67,10 @@ Node *dequeue (Queue *q){
         //Se desenlaza el nodo
 		deleted->next = NULL;
         //Retorna el borrado
-        printf("Process dequeued!\n");
+        printf("Process dequeued!%d\n",q->length);
+        
         q->length-=1;
+        printf("Fuera de el metodo!\n");
 		return deleted;
     }
  

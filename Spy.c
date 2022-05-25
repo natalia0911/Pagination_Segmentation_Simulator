@@ -38,17 +38,34 @@ int semaphoreId;
 struct sembuf Operation;
 union semun arg;
 
+int semaphoreIDFiles;
+struct sembuf OperationF;
+union semun argF;
 
-//Funciones del semaforo
-void wait(){
+
+
+//Funciones del semaforo para la memoria.
+void waitMemory(){
 	Operation.sem_op = -1;
 	semop (semaphoreId, &Operation, 1);
 }
 
-void signal(){
+void signalMemory(){
 	Operation.sem_op = 1;
 	semop (semaphoreId, &Operation, 1);
 }
+
+//Funciones del semaforo para los archivos.
+void waitFiles(){
+	OperationF.sem_op = -1;
+	semop (semaphoreIDFiles, &OperationF, 1);
+}
+
+void signalFiles(){
+	OperationF.sem_op = 1;
+	semop (semaphoreIDFiles, &OperationF, 1);
+}
+
 
 
 void executionProcess(){
@@ -104,36 +121,36 @@ void finishedProcess(){
 
 void showProcessState(){
     printf("[Nota]: PID: 0 denota que no hay proceso\n");
-    wait();
+    waitMemory();
     executionProcess();
-    signal();
+    signalMemory();
     
-    wait();
+    waitFiles();
     blockProcess();
-    signal();
+    signalFiles();
     
-    wait();
+    waitFiles();
     searchProcess();
-    signal();
+    signalFiles();
 
-    wait();
+    waitFiles();
     deadProcess();
-    signal();
+    signalFiles();
     
-    wait();
+    waitFiles();
     finishedProcess();
-    signal();
+    signalFiles();
 }
 
 
 void showMemoryState(){
     
     printf("#pagina\tProceso\n");
-    wait();
+    waitMemory();
 	for (int i=0; i<tamannio; i++){
         printf("   %d\t%d\n", i,memory[i].PID);
 	}
-    signal();
+    signalMemory();
 
 }
 
@@ -180,8 +197,12 @@ int main(int argc, char const *argv[])
     //---------------------------------------------------------------
     key_t semaphoreKey = getKey(semaphoreInt);
 	semaphoreId = createSemaphore(semaphoreKey);
-    Operation.sem_num = 0;
-    Operation.sem_flg = 0;
+    Operation.sem_num = 0; Operation.sem_flg = 0;
+
+    //---------------------------------------------------------------
+    key_t semaphoreKeyF = getKey(semaphoreInt);
+	semaphoreIDFiles = createSemaphore(semaphoreKeyF);
+    OperationF.sem_num = 0; OperationF.sem_flg = 0;
 
 
     return 0;
