@@ -33,12 +33,15 @@ int main (){
     Ejecutar
     ./p4 
     */
+
     //---------------------------------------------------------
     //Obtener la llave de la memoria
     key_t memoryKey = getKey(memoryProcessInt);
     tamannio = getSize();
     int memoryId = createMemory(memoryKey,tamannio);
     memory = getMemory(memoryId);
+    //Libera la Memoria compartida.
+	shmctl (memoryId, IPC_RMID, (struct shmid_ds *)NULL);
 
     //---------------------------------------------------------
     key_t semaphoreKey = getKey(semaphoreInt);
@@ -47,12 +50,13 @@ int main (){
     Operation.sem_num = 1;
     Operation.sem_op = 2;
     Operation.sem_flg = 0;
+    //Da el paso, lo cual genera que el goAhead en el producer
+    //se ponga en cero y termine el programa.
+    semop (semaphoreId, &Operation, 1);
 
     //---------------------------------------------------------
-    semop (semaphoreId, &Operation, 1);
-    //Libera la Memoria compartida
-	shmctl (memoryId, IPC_RMID, (struct shmid_ds *)NULL);
-
+    //Se cierra la bitacora aunque no es necesario porque siempre
+    //Se abre y se cierra.
 	FILE* fichero; 
 	fichero = openFile("binnacle.txt","a+");
 	fclose(fichero);

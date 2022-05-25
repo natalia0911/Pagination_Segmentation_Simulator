@@ -53,8 +53,7 @@ int main(){
     gcc Initializer.c -o p1
     PARA EJECUTAR
     ./p1
-    */
-
+    */  
 
     //Obtener la llave asociada al numero
     key_t memoryKey = getKey(memoryProcessInt);
